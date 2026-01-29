@@ -48,6 +48,22 @@ final class StorageManager {
     }
 
     func appendPendingPrompt(_ prompt: PendingPrompt) throws {
+        // Use file locking to prevent race conditions when multiple CLI instances run simultaneously
+        let lockURL = appSupportURL.appendingPathComponent(".pending.lock")
+        fileManager.createFile(atPath: lockURL.path, contents: nil)
+
+        let lockFd = open(lockURL.path, O_RDWR)
+        guard lockFd >= 0 else {
+            throw NSError(domain: "StorageManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to open lock file"])
+        }
+        defer { close(lockFd) }
+
+        // Acquire exclusive lock (blocking)
+        guard flock(lockFd, LOCK_EX) == 0 else {
+            throw NSError(domain: "StorageManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to acquire lock"])
+        }
+        defer { flock(lockFd, LOCK_UN) }
+
         var prompts = loadPendingPrompts()
         prompts.append(prompt)
         try savePendingPrompts(prompts)

@@ -35,11 +35,11 @@ User prompt → Claude Code Hook (UserPromptSubmit)
 ### Build Commands
 
 ```bash
-# Debug build
-./scripts/build.sh Debug
+# Debug build (kill existing app first!)
+pkill -x CCLangTutor; ./scripts/build.sh Debug
 
 # Release build
-./scripts/build.sh Release
+pkill -x CCLangTutor; ./scripts/build.sh Release
 
 # Package DMG (includes notarization)
 ./scripts/package_dmg.sh
@@ -47,6 +47,8 @@ User prompt → Claude Code Hook (UserPromptSubmit)
 # Release new version
 ./scripts/release.sh 1.0.0
 ```
+
+**Note:** Always kill the running app before building, otherwise the old version keeps running.
 
 ### Key Files
 

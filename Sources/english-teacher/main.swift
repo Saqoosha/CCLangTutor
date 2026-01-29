@@ -1,5 +1,25 @@
 import Foundation
 
+// Simple file logger for debugging
+func log(_ message: String) {
+    let logFile = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        .appendingPathComponent("CCLangTutor")
+        .appendingPathComponent("hook.log")
+    let timestamp = ISO8601DateFormatter().string(from: Date())
+    let line = "[\(timestamp)] \(message)\n"
+    if let data = line.data(using: .utf8) {
+        if FileManager.default.fileExists(atPath: logFile.path) {
+            if let handle = try? FileHandle(forWritingTo: logFile) {
+                handle.seekToEndOfFile()
+                handle.write(data)
+                handle.closeFile()
+            }
+        } else {
+            try? data.write(to: logFile)
+        }
+    }
+}
+
 // Hook input structure
 struct HookInput: Decodable {
     let sessionId: String?
@@ -12,13 +32,17 @@ struct HookInput: Decodable {
 }
 
 func main() {
+    log("english-teacher started")
+
     // Read JSON from stdin
     let inputData = FileHandle.standardInput.readDataToEndOfFile()
 
     guard !inputData.isEmpty else {
-        // No input, exit silently
+        log("No input data, exiting")
         exit(0)
     }
+
+    log("Received \(inputData.count) bytes")
 
     // Parse input
     let decoder = JSONDecoder()
@@ -52,9 +76,11 @@ func main() {
 
     // Save to pending.json
     do {
+        log("Saving prompt: \(textToCorrect.prefix(50))...")
         try StorageManager.shared.appendPendingPrompt(pendingPrompt)
+        log("Saved to pending.json")
     } catch {
-        // Failed to save, exit silently
+        log("Failed to save: \(error.localizedDescription)")
         fputs("Failed to save pending prompt: \(error)\n", stderr)
         exit(1)
     }
@@ -66,6 +92,7 @@ func main() {
     try? task.run()
 
     // Send distributed notification
+    log("Sending notification")
     DistributedNotificationCenter.default().postNotificationName(
         CCLangTutorNotification.newPrompt,
         object: nil,
@@ -73,6 +100,7 @@ func main() {
         deliverImmediately: true
     )
 
+    log("Done")
     exit(0)
 }
 

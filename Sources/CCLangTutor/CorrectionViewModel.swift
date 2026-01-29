@@ -69,6 +69,13 @@ final class CorrectionViewModel: ObservableObject {
             defer {
                 self.isProcessing = false
                 logger.info("Processing complete. Total corrections: \(self.corrections.count)")
+
+                // Check for new prompts that arrived during processing
+                self.loadData()
+                if !self.pendingPrompts.isEmpty {
+                    logger.info("Found \(self.pendingPrompts.count) new pending prompts, processing...")
+                    self.processPendingPrompts()
+                }
             }
 
             for prompt in promptsToProcess {

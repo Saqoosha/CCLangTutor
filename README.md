@@ -95,17 +95,26 @@ All data is stored locally in:
 
 ## Limitations
 
+### Prompts During Processing Not Captured
+
+When you send a message while Claude Code is processing (generating a response), **that message is not captured for correction**.
+
+This is a limitation of Claude Code's hook system - the `UserPromptSubmit` hook only fires for regular prompt submissions, not for "interrupt" messages sent during processing.
+
 ### AskUserQuestion Responses Not Captured
 
 When Claude Code uses the `AskUserQuestion` tool to ask you a question with options, and you select "Other" to provide a custom text response, **this input is not captured for correction**.
 
-This is a limitation of Claude Code's hook system - the `UserPromptSubmit` hook only fires for regular prompt submissions, not for responses to tool questions.
+This is also a limitation of Claude Code's hook system - the `UserPromptSubmit` hook only fires for regular prompt submissions, not for responses to tool questions.
+
+### Summary
 
 **What gets corrected:**
-- Regular prompts typed in the main input
+- Regular prompts typed in the main input (when Claude is idle)
 - Slash command arguments (e.g., `/commit fix the bug` → "fix the bug" is corrected)
 
 **What does NOT get corrected:**
+- Messages sent while Claude Code is processing (interrupt messages)
 - Responses to `AskUserQuestion` tool (including "Other" custom text)
 - Selecting predefined options (these are not user-written text anyway)
 
