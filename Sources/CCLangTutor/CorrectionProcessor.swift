@@ -2,12 +2,29 @@ import Foundation
 import SwiftUI
 import os
 
-private let logger = Logger(subsystem: "sh.saqoo.cclangtutor", category: "Processor")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "sh.saqoo.cclangtutor", category: "Processor")
 
-enum APIError: Error {
+enum APIError: LocalizedError {
     case noAPIKey
+    case invalidURL
     case invalidResponse
-    case httpError(statusCode: Int)
+    case httpError(statusCode: Int, message: String?)
+    case parseError(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .noAPIKey:
+            return "API key is missing"
+        case .invalidURL:
+            return "Invalid API URL"
+        case .invalidResponse:
+            return "Invalid response from API"
+        case .httpError(let statusCode, let message):
+            return "HTTP error \(statusCode): \(message ?? "Unknown")"
+        case .parseError(let details):
+            return "Failed to parse response: \(details)"
+        }
+    }
 }
 
 actor CorrectionProcessor {
@@ -34,18 +51,18 @@ actor CorrectionProcessor {
         }
 
         let response: String
-        logger.info("Calling \(provider.displayName) API...")
+        logger.info("Calling \(provider.displayName) API with model: \(provider.defaultModel)")
         switch provider {
         case .claudeAPI:
-            response = try await callClaudeAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt)
+            response = try await callClaudeAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
         case .gemini:
-            response = try await callGeminiAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt)
+            response = try await callGeminiAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
         case .openAI:
-            response = try await callOpenAIAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt)
+            response = try await callOpenAIAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
         }
         logger.info("API response received, length: \(response.count)")
 
-        let correction = parseResponse(response, from: prompt)
+        let correction = try parseResponse(response, from: prompt)
         logger.info("Parsed correction: isPerfect=\(correction.isPerfect), errors=\(correction.errors.count)")
         return correction
     }
@@ -67,8 +84,10 @@ actor CorrectionProcessor {
 
     // MARK: - Claude API
 
-    private func callClaudeAPI(prompt: String, apiKey: String, systemPrompt: String) async throws -> String {
-        let url = URL(string: "https://api.anthropic.com/v1/messages")!
+    private func callClaudeAPI(prompt: String, apiKey: String, systemPrompt: String, model: String) async throws -> String {
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
+            throw APIError.invalidURL
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -78,7 +97,7 @@ actor CorrectionProcessor {
         let fullSystemPrompt = systemPrompt + "\n\n" + responseFormatPrompt
 
         let body: [String: Any] = [
-            "model": "claude-3-5-haiku-20241022",
+            "model": model,
             "max_tokens": 1024,
             "system": fullSystemPrompt,
             "messages": [
@@ -94,7 +113,8 @@ actor CorrectionProcessor {
             throw APIError.invalidResponse
         }
         guard httpResponse.statusCode == 200 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
+            let errorMessage = String(data: data, encoding: .utf8)
+            throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
         }
 
         let decoded = try JSONDecoder().decode(ClaudeResponse.self, from: data)
@@ -103,8 +123,10 @@ actor CorrectionProcessor {
 
     // MARK: - Gemini API
 
-    private func callGeminiAPI(prompt: String, apiKey: String, systemPrompt: String) async throws -> String {
-        let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=\(apiKey)")!
+    private func callGeminiAPI(prompt: String, apiKey: String, systemPrompt: String, model: String) async throws -> String {
+        guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)") else {
+            throw APIError.invalidURL
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -126,7 +148,8 @@ actor CorrectionProcessor {
             throw APIError.invalidResponse
         }
         guard httpResponse.statusCode == 200 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
+            let errorMessage = String(data: data, encoding: .utf8)
+            throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
         }
 
         let decoded = try JSONDecoder().decode(GeminiResponse.self, from: data)
@@ -135,8 +158,10 @@ actor CorrectionProcessor {
 
     // MARK: - OpenAI API
 
-    private func callOpenAIAPI(prompt: String, apiKey: String, systemPrompt: String) async throws -> String {
-        let url = URL(string: "https://api.openai.com/v1/chat/completions")!
+    private func callOpenAIAPI(prompt: String, apiKey: String, systemPrompt: String, model: String) async throws -> String {
+        guard let url = URL(string: "https://api.openai.com/v1/chat/completions") else {
+            throw APIError.invalidURL
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -145,7 +170,7 @@ actor CorrectionProcessor {
         let fullSystemPrompt = systemPrompt + "\n\n" + responseFormatPrompt
 
         let body: [String: Any] = [
-            "model": "gpt-4o-mini",
+            "model": model,
             "messages": [
                 ["role": "system", "content": fullSystemPrompt],
                 ["role": "user", "content": prompt]
@@ -160,7 +185,8 @@ actor CorrectionProcessor {
             throw APIError.invalidResponse
         }
         guard httpResponse.statusCode == 200 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
+            let errorMessage = String(data: data, encoding: .utf8)
+            throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
         }
 
         let decoded = try JSONDecoder().decode(OpenAIResponse.self, from: data)
@@ -188,15 +214,22 @@ actor CorrectionProcessor {
         """
     }
 
-    private func parseResponse(_ text: String, from prompt: PendingPrompt) -> Correction {
-        guard let jsonString = extractJSON(from: text),
-              let jsonData = jsonString.data(using: .utf8),
-              let result = try? JSONDecoder().decode(CorrectionResult.self, from: jsonData) else {
-            return Correction(
-                from: prompt,
-                corrected: prompt.prompt,
-                errors: []
-            )
+    private func parseResponse(_ text: String, from prompt: PendingPrompt) throws -> Correction {
+        guard let jsonString = extractJSON(from: text) else {
+            logger.error("Failed to extract JSON from response: \(text.prefix(200))")
+            throw APIError.parseError("No JSON found in response")
+        }
+
+        guard let jsonData = jsonString.data(using: .utf8) else {
+            throw APIError.parseError("Failed to convert JSON to data")
+        }
+
+        let result: CorrectionResult
+        do {
+            result = try JSONDecoder().decode(CorrectionResult.self, from: jsonData)
+        } catch {
+            logger.error("JSON decode error: \(error.localizedDescription)")
+            throw APIError.parseError(error.localizedDescription)
         }
 
         let errors = result.errors.map {

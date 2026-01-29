@@ -1,12 +1,13 @@
 import Foundation
 
 struct CorrectionError: Codable, Identifiable {
-    var id: String { "\(original)-\(corrected)" }
+    let id: UUID
     let original: String
     let corrected: String
     let explanation: String
 
-    init(original: String, corrected: String, explanation: String) {
+    init(id: UUID = UUID(), original: String, corrected: String, explanation: String) {
+        self.id = id
         self.original = original
         self.corrected = corrected
         self.explanation = explanation

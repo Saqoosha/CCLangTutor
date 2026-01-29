@@ -31,9 +31,9 @@ enum AIProvider: String, CaseIterable {
     var defaultModel: String {
         switch self {
         case .claudeAPI:
-            return "claude-3-5-haiku-20241022"
+            return "claude-haiku-4-5-20251001"
         case .gemini:
-            return "gemini-2.0-flash"
+            return "gemini-2.5-flash-lite"
         case .openAI:
             return "gpt-4o-mini"
         }

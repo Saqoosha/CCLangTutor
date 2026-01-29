@@ -1,7 +1,7 @@
 import SwiftUI
 import os
 
-private let logger = Logger(subsystem: "sh.saqoo.cclangtutor", category: "ViewModel")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "sh.saqoo.cclangtutor", category: "ViewModel")
 
 @MainActor
 final class CorrectionViewModel: ObservableObject {
@@ -12,7 +12,7 @@ final class CorrectionViewModel: ObservableObject {
 
     private let storage = StorageManager.shared
     private let processor = CorrectionProcessor()
-    private var notificationObserver: Any?
+    nonisolated(unsafe) private var notificationObserver: Any?
 
     init() {
         logger.info("ViewModel init")
@@ -21,7 +21,7 @@ final class CorrectionViewModel: ObservableObject {
         processPendingPrompts()
     }
 
-    deinit {
+    nonisolated deinit {
         if let observer = notificationObserver {
             DistributedNotificationCenter.default().removeObserver(observer)
         }
@@ -60,10 +60,16 @@ final class CorrectionViewModel: ObservableObject {
         }
 
         isProcessing = true
-        logger.info("Starting to process \(self.pendingPrompts.count) prompts")
+        let promptsToProcess = pendingPrompts
+        logger.info("Starting to process \(promptsToProcess.count) prompts")
 
-        Task {
-            for prompt in pendingPrompts {
+        Task { @MainActor in
+            defer {
+                self.isProcessing = false
+                logger.info("Processing complete. Total corrections: \(self.corrections.count)")
+            }
+
+            for prompt in promptsToProcess {
                 logger.info("Processing prompt: \(prompt.prompt.prefix(50))...")
                 do {
                     let correction = try await processor.process(prompt)
@@ -71,20 +77,16 @@ final class CorrectionViewModel: ObservableObject {
                     try storage.appendCorrection(correction)
                     try storage.removePendingPrompt(id: prompt.id)
 
-                    await MainActor.run {
-                        self.corrections.insert(correction, at: 0)
-                        self.pendingPrompts.removeAll { $0.id == prompt.id }
-                        self.selectedCorrectionId = correction.id
-                    }
+                    self.corrections.insert(correction, at: 0)
+                    self.pendingPrompts.removeAll { $0.id == prompt.id }
+                    self.selectedCorrectionId = correction.id
                     logger.info("Correction saved and UI updated")
                 } catch {
                     logger.error("Failed to process prompt: \(error.localizedDescription)")
+                    // Remove failed prompt to prevent infinite retry
+                    try? storage.removePendingPrompt(id: prompt.id)
+                    self.pendingPrompts.removeAll { $0.id == prompt.id }
                 }
-            }
-
-            await MainActor.run {
-                self.isProcessing = false
-                logger.info("Processing complete. Total corrections: \(self.corrections.count)")
             }
         }
     }

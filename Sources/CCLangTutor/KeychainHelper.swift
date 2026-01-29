@@ -9,7 +9,9 @@ enum KeychainHelper {
 
     /// Save a key to the Keychain
     static func save(key: String, service: String) throws {
-        let data = key.data(using: .utf8)!
+        guard let data = key.data(using: .utf8) else {
+            throw KeychainError.encodingFailed
+        }
 
         // Delete existing item first
         let deleteQuery: [String: Any] = [
@@ -18,11 +20,12 @@ enum KeychainHelper {
         ]
         SecItemDelete(deleteQuery as CFDictionary)
 
-        // Add new item
+        // Add new item with secure access control
         let addQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecValueData as String: data
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
 
         let status = SecItemAdd(addQuery as CFDictionary, nil)
@@ -63,10 +66,13 @@ enum KeychainHelper {
 }
 
 enum KeychainError: LocalizedError {
+    case encodingFailed
     case saveFailed(status: OSStatus)
 
     var errorDescription: String? {
         switch self {
+        case .encodingFailed:
+            return "Failed to encode key data"
         case .saveFailed(let status):
             return "Failed to save to Keychain (status: \(status))"
         }
