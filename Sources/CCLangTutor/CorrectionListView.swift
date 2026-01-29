@@ -4,36 +4,46 @@ struct CorrectionListView: View {
     @EnvironmentObject var viewModel: CorrectionViewModel
 
     var body: some View {
-        List(selection: $viewModel.selectedCorrectionId) {
-            if !viewModel.pendingPrompts.isEmpty {
+        ScrollViewReader { proxy in
+            List(selection: $viewModel.selectedCorrectionId) {
+                if !viewModel.pendingPrompts.isEmpty {
+                    Section {
+                        ForEach(viewModel.pendingPrompts) { prompt in
+                            PendingRowView(prompt: prompt)
+                        }
+                    } header: {
+                        Label("Processing", systemImage: "ellipsis.circle")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.orange)
+                            .id("listTop")
+                    }
+                }
+
                 Section {
-                    ForEach(viewModel.pendingPrompts) { prompt in
-                        PendingRowView(prompt: prompt)
+                    ForEach(viewModel.corrections) { correction in
+                        CorrectionRowView(
+                            correction: correction,
+                            isSelected: viewModel.selectedCorrectionId == correction.id
+                        )
+                        .tag(correction.id)
+                        .id(correction.id)
+                    }
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            viewModel.deleteCorrection(viewModel.corrections[index])
+                        }
                     }
                 } header: {
-                    Label("Processing", systemImage: "ellipsis.circle")
+                    Label("History", systemImage: "clock")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.secondary)
+                        .id(viewModel.pendingPrompts.isEmpty ? "listTop" : "historyHeader")
                 }
             }
-
-            Section {
-                ForEach(viewModel.corrections) { correction in
-                    CorrectionRowView(
-                        correction: correction,
-                        isSelected: viewModel.selectedCorrectionId == correction.id
-                    )
-                    .tag(correction.id)
+            .onChange(of: viewModel.corrections.first?.id) {
+                withAnimation {
+                    proxy.scrollTo("listTop", anchor: .top)
                 }
-                .onDelete { indexSet in
-                    for index in indexSet {
-                        viewModel.deleteCorrection(viewModel.corrections[index])
-                    }
-                }
-            } header: {
-                Label("History", systemImage: "clock")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
             }
         }
         .listStyle(.sidebar)

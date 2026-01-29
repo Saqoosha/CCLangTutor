@@ -5,22 +5,28 @@ struct CorrectionDetailView: View {
     @State private var showCopiedToast = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
-                // Header with status
-                headerSection
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    // Header with status
+                    headerSection
+                        .id("top")
 
-                // Main diff view
-                diffSection
+                    // Main diff view
+                    diffSection
 
-                // Detailed errors
-                if !correction.errors.isEmpty {
-                    errorsSection
+                    // Detailed errors
+                    if !correction.errors.isEmpty {
+                        errorsSection
+                    }
+
+                    Spacer(minLength: 40)
                 }
-
-                Spacer(minLength: 40)
+                .padding(24)
             }
-            .padding(24)
+            .onChange(of: correction.id) {
+                proxy.scrollTo("top", anchor: .top)
+            }
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .navigationTitle(formattedDate)
