@@ -1,6 +1,10 @@
 # CCLangTutor
 
-A macOS app that automatically corrects English grammar in your Claude Code prompts.
+<p align="center">
+  <img src="images/appicon.png" width="128" height="128" alt="CCLangTutor icon">
+  <br>
+  A macOS app that automatically corrects English grammar in your Claude Code prompts.
+</p>
 
 ## Overview
 
