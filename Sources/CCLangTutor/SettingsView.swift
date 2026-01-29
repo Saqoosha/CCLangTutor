@@ -1,43 +1,9 @@
 import SwiftUI
 
-enum ResponseLanguage: String, CaseIterable {
-    case english = "en"
-    case japanese = "ja"
-    case spanish = "es"
-    case french = "fr"
-    case german = "de"
-    case chinese = "zh"
-    case korean = "ko"
-
-    var displayName: String {
-        switch self {
-        case .english: return "English"
-        case .japanese: return "日本語"
-        case .spanish: return "Español"
-        case .french: return "Français"
-        case .german: return "Deutsch"
-        case .chinese: return "中文"
-        case .korean: return "한국어"
-        }
-    }
-
-    var languageName: String {
-        switch self {
-        case .english: return "English"
-        case .japanese: return "Japanese"
-        case .spanish: return "Spanish"
-        case .french: return "French"
-        case .german: return "German"
-        case .chinese: return "Chinese"
-        case .korean: return "Korean"
-        }
-    }
-}
-
 struct SettingsView: View {
     @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.claudeAPI.rawValue
     @AppStorage("systemPrompt") private var systemPrompt = SettingsView.defaultSystemPrompt
-    @AppStorage("responseLanguage") private var responseLanguage = ResponseLanguage.english.rawValue
+    @AppStorage(ResponseLanguage.userDefaultsKey) private var responseLanguage = ResponseLanguage.english.rawValue
 
     @State private var claudeAPIKey = ""
     @State private var geminiAPIKey = ""

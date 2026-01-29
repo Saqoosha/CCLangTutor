@@ -15,7 +15,7 @@ actor ChatProcessor {
             return "Error: No API key configured. Please set your \(provider.displayName) API key in Settings (⌘,)."
         }
 
-        let systemPrompt = buildSystemPrompt(for: correction)
+        let systemPrompt = await buildSystemPrompt(for: correction)
 
         logger.info("Calling \(provider.displayName) API for chat")
         let response: String
@@ -59,6 +59,7 @@ actor ChatProcessor {
         KeychainHelper.load(service: provider.keychainService)
     }
 
+    @MainActor
     private func buildSystemPrompt(for correction: Correction) -> String {
         var prompt = """
         You are a friendly English tutor. The user is asking questions about a grammar correction.
@@ -90,8 +91,7 @@ actor ChatProcessor {
         - Keep responses concise but thorough
         """
 
-        let languageCode = UserDefaults.standard.string(forKey: "responseLanguage") ?? ResponseLanguage.english.rawValue
-        let language = ResponseLanguage(rawValue: languageCode) ?? .english
+        let language = ResponseLanguage.current
 
         if language == .english {
             prompt += "\n- Use simple, clear English"

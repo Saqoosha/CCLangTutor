@@ -71,6 +71,7 @@ Sources/
 │   ├── CorrectionViewModel.swift   # State management
 │   ├── CorrectionProcessor.swift   # AI API calls for corrections (Actor)
 │   ├── ChatProcessor.swift   # AI API calls for chat (Actor)
+│   ├── ResponseLanguage.swift # Response language enum and settings
 │   ├── AIProvider.swift      # Provider enum
 │   └── KeychainHelper.swift  # Secure key storage
 │

@@ -76,8 +76,7 @@ actor CorrectionProcessor {
     @MainActor
     private func getSystemPrompt() -> String {
         let basePrompt = UserDefaults.standard.string(forKey: "systemPrompt") ?? SettingsView.defaultSystemPrompt
-        let languageCode = UserDefaults.standard.string(forKey: "responseLanguage") ?? ResponseLanguage.english.rawValue
-        let language = ResponseLanguage(rawValue: languageCode) ?? .english
+        let language = ResponseLanguage.current
 
         if language == .english {
             return basePrompt
