@@ -19,8 +19,11 @@ struct CorrectionListView: View {
 
             Section {
                 ForEach(viewModel.corrections) { correction in
-                    CorrectionRowView(correction: correction)
-                        .tag(correction.id)
+                    CorrectionRowView(
+                        correction: correction,
+                        isSelected: viewModel.selectedCorrectionId == correction.id
+                    )
+                    .tag(correction.id)
                 }
                 .onDelete { indexSet in
                     for index in indexSet {
@@ -69,6 +72,7 @@ struct PendingRowView: View {
 
 struct CorrectionRowView: View {
     let correction: Correction
+    var isSelected: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -78,24 +82,25 @@ struct CorrectionRowView: View {
                 Text(correction.original)
                     .lineLimit(2)
                     .font(.body)
+                    .foregroundStyle(isSelected ? .white : .primary)
 
                 HStack(spacing: 8) {
                     if correction.isPerfect {
                         Label("Perfect", systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(isSelected ? .white.opacity(0.9) : .green)
                     } else {
                         Label("\(correction.errors.count) issue\(correction.errors.count == 1 ? "" : "s")", systemImage: "pencil.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(statusColor)
+                            .foregroundStyle(isSelected ? .white.opacity(0.9) : statusColor)
                     }
 
                     Text("·")
-                        .foregroundStyle(.quaternary)
+                        .foregroundStyle(isSelected ? Color.white.opacity(0.5) : Color.secondary.opacity(0.5))
 
                     Text(timeAgo)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary)
                 }
             }
         }
@@ -106,12 +111,12 @@ struct CorrectionRowView: View {
     private var statusBadge: some View {
         ZStack {
             Circle()
-                .fill(statusColor.opacity(0.15))
+                .fill(isSelected ? .white.opacity(0.2) : statusColor.opacity(0.15))
                 .frame(width: 32, height: 32)
 
             Image(systemName: statusIcon)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(statusColor)
+                .foregroundStyle(isSelected ? .white : statusColor)
         }
     }
 
