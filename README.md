@@ -4,7 +4,7 @@ A macOS app that automatically corrects English grammar in your Claude Code prom
 
 ## Overview
 
-CCLangTutor integrates with Claude Code via hooks to provide real-time English grammar corrections. When you submit a prompt in Claude Code, the app captures it, sends it to Claude API (Haiku) for correction, and displays the results in a native macOS interface.
+CCLangTutor integrates with Claude Code via hooks to provide real-time English grammar corrections. When you submit a prompt in Claude Code, the app captures it, sends it to your configured AI provider (Claude, Gemini, or OpenAI) for correction, and displays the results in a native macOS interface.
 
 ## Architecture
 
@@ -26,7 +26,7 @@ User prompt → Claude Code Hook (UserPromptSubmit)
 
 ### From DMG (Recommended)
 
-1. Download the latest `.dmg` from [Releases](https://github.com/user/CCLangTutor/releases)
+1. Download the latest `.dmg` from [Releases](https://github.com/Saqoosha/CCLangTutor/releases)
 2. Open the DMG and drag `CCLangTutor.app` to Applications
 3. Run the app once to register the hook
 
@@ -34,7 +34,7 @@ User prompt → Claude Code Hook (UserPromptSubmit)
 
 ```bash
 # Clone the repository
-git clone https://github.com/user/CCLangTutor.git
+git clone https://github.com/Saqoosha/CCLangTutor.git
 cd CCLangTutor
 
 # Build release version
@@ -114,7 +114,7 @@ This is a limitation of Claude Code's hook system - the `UserPromptSubmit` hook 
 ### Requirements
 
 - macOS 14.0+
-- Xcode 15.0+
+- Xcode 16.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 
 ### Build Commands
