@@ -1,0 +1,120 @@
+import SwiftUI
+
+struct SettingsView: View {
+    @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.claudeAPI.rawValue
+    @AppStorage("systemPrompt") private var systemPrompt = SettingsView.defaultSystemPrompt
+
+    @State private var claudeAPIKey = ""
+    @State private var geminiAPIKey = ""
+    @State private var openAIAPIKey = ""
+    @State private var showingSaveConfirmation = false
+    @State private var saveConfirmationMessage = ""
+
+    static let defaultSystemPrompt = """
+    You are a friendly English tutor. When correcting:
+    - Point out grammar and spelling errors
+    - Suggest more natural phrasing
+    - Explain WHY something is incorrect
+    - Be encouraging, not critical
+    """
+
+    private var aiProvider: AIProvider {
+        AIProvider(rawValue: aiProviderRaw) ?? .claudeAPI
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("AI Provider", selection: $aiProviderRaw) {
+                    ForEach(AIProvider.allCases, id: \.rawValue) { provider in
+                        Text(provider.displayName).tag(provider.rawValue)
+                    }
+                }
+            } header: {
+                Text("AI Provider")
+            } footer: {
+                Text("Model: \(aiProvider.defaultModel)")
+            }
+
+            Section {
+                SecureField(aiProvider.apiKeyPlaceholder, text: apiKeyBinding)
+                    .textFieldStyle(.roundedBorder)
+
+                HStack {
+                    Button("Save to Keychain") {
+                        saveAPIKey(apiKeyBinding.wrappedValue, service: aiProvider.keychainService)
+                    }
+                    .disabled(apiKeyBinding.wrappedValue.isEmpty)
+
+                    if KeychainHelper.load(service: aiProvider.keychainService) != nil {
+                        Text("✓ Saved")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                    }
+                }
+            } header: {
+                Text("\(aiProvider.displayName) API Key")
+            } footer: {
+                Text("Get your API key from \(aiProvider.apiKeyHelpURL)")
+            }
+
+            Section {
+                TextEditor(text: $systemPrompt)
+                    .font(.system(.caption, design: .monospaced))
+                    .frame(height: 80)
+
+                Button("Reset to Default") {
+                    systemPrompt = SettingsView.defaultSystemPrompt
+                }
+                .foregroundStyle(.secondary)
+            } header: {
+                Text("Tutor Personality")
+            }
+        }
+        .formStyle(.grouped)
+        .scrollDisabled(true)
+        .frame(width: 450, height: 500)
+        .alert("API Key", isPresented: $showingSaveConfirmation) {
+            Button("OK") { }
+        } message: {
+            Text(saveConfirmationMessage)
+        }
+        .onAppear {
+            loadAPIKeys()
+        }
+    }
+
+    private var apiKeyBinding: Binding<String> {
+        switch aiProvider {
+        case .claudeAPI: return $claudeAPIKey
+        case .gemini: return $geminiAPIKey
+        case .openAI: return $openAIAPIKey
+        }
+    }
+
+    private func loadAPIKeys() {
+        if let key = KeychainHelper.load(service: KeychainHelper.claudeAPIService) {
+            claudeAPIKey = key
+        }
+        if let key = KeychainHelper.load(service: KeychainHelper.geminiAPIService) {
+            geminiAPIKey = key
+        }
+        if let key = KeychainHelper.load(service: KeychainHelper.openAIAPIService) {
+            openAIAPIKey = key
+        }
+    }
+
+    private func saveAPIKey(_ key: String, service: String) {
+        do {
+            try KeychainHelper.save(key: key, service: service)
+            saveConfirmationMessage = "API key saved successfully"
+        } catch {
+            saveConfirmationMessage = "Failed to save: \(error.localizedDescription)"
+        }
+        showingSaveConfirmation = true
+    }
+}
+
+#Preview {
+    SettingsView()
+}

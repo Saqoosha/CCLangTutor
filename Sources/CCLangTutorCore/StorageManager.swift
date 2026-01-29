@@ -1,0 +1,83 @@
+import Foundation
+
+final class StorageManager {
+    static let shared = StorageManager()
+
+    private let fileManager = FileManager.default
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+
+    var appSupportURL: URL {
+        let url = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("CCLangTutor", isDirectory: true)
+        try? fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    var pendingURL: URL {
+        appSupportURL.appendingPathComponent("pending.json")
+    }
+
+    var correctionsURL: URL {
+        appSupportURL.appendingPathComponent("corrections.json")
+    }
+
+    private init() {
+        encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+    }
+
+    // MARK: - Pending Prompts
+
+    func loadPendingPrompts() -> [PendingPrompt] {
+        guard let data = try? Data(contentsOf: pendingURL),
+              let store = try? decoder.decode(PendingPromptStore.self, from: data) else {
+            return []
+        }
+        return store.pending
+    }
+
+    func savePendingPrompts(_ prompts: [PendingPrompt]) throws {
+        let store = PendingPromptStore(pending: prompts)
+        let data = try encoder.encode(store)
+        try data.write(to: pendingURL, options: .atomic)
+    }
+
+    func appendPendingPrompt(_ prompt: PendingPrompt) throws {
+        var prompts = loadPendingPrompts()
+        prompts.append(prompt)
+        try savePendingPrompts(prompts)
+    }
+
+    func removePendingPrompt(id: UUID) throws {
+        var prompts = loadPendingPrompts()
+        prompts.removeAll { $0.id == id }
+        try savePendingPrompts(prompts)
+    }
+
+    // MARK: - Corrections
+
+    func loadCorrections() -> [Correction] {
+        guard let data = try? Data(contentsOf: correctionsURL),
+              let store = try? decoder.decode(CorrectionStore.self, from: data) else {
+            return []
+        }
+        return store.corrections
+    }
+
+    func saveCorrections(_ corrections: [Correction]) throws {
+        let store = CorrectionStore(corrections: corrections)
+        let data = try encoder.encode(store)
+        try data.write(to: correctionsURL, options: .atomic)
+    }
+
+    func appendCorrection(_ correction: Correction) throws {
+        var corrections = loadCorrections()
+        corrections.insert(correction, at: 0) // newest first
+        try saveCorrections(corrections)
+    }
+}

@@ -1,0 +1,68 @@
+name: CCLangTutor
+options:
+  bundleIdPrefix: sh.saqoo
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  CCLangTutor:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/CCLangTutor
+        excludes:
+          - "**/.DS_Store"
+      - path: Sources/CCLangTutorCore
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: sh.saqoo.cclangtutor
+      PRODUCT_NAME: "CCLangTutor"
+      INFOPLIST_FILE: Sources/CCLangTutor/Info.plist
+      GENERATE_INFOPLIST_FILE: false
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: G5G54TCH8W
+      ENABLE_HARDENED_RUNTIME: YES
+      CODE_SIGN_ENTITLEMENTS: Sources/CCLangTutor/CCLangTutor.entitlements
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+    info:
+      path: Sources/CCLangTutor/Info.plist
+      properties:
+        CFBundleName: "CCLangTutor"
+        CFBundleDisplayName: "CCLangTutor"
+        CFBundleIdentifier: sh.saqoo.cclangtutor
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundlePackageType: APPL
+        CFBundleIconName: AppIcon
+        CFBundleExecutable: "CCLangTutor"
+        LSMinimumSystemVersion: "14.0"
+        NSHighResolutionCapable: true
+        LSApplicationCategoryType: public.app-category.developer-tools
+        NSHumanReadableCopyright: "© 2026 Saqoosha. MIT License."
+
+  english-teacher:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Sources/english-teacher
+        excludes:
+          - "**/.DS_Store"
+      - path: Sources/CCLangTutorCore
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      PRODUCT_NAME: "english-teacher"
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: G5G54TCH8W
+      ENABLE_HARDENED_RUNTIME: YES

@@ -1,0 +1,61 @@
+# CCLangTutor - Agent Instructions
+
+## Project Overview
+
+CCLangTutor is a macOS app that automatically corrects English grammar in Claude Code prompts.
+
+### Architecture
+
+```
+User prompt → Claude Code Hook (UserPromptSubmit)
+                    ↓
+            english-teacher CLI
+                    ↓
+            pending.json (stored)
+                    ↓
+            CCLangTutor.app (processes)
+                    ↓
+            Claude API (Haiku) → corrections.json
+                    ↓
+            SwiftUI displays results
+```
+
+### Components
+
+1. **english-teacher** (CLI) - Located in app bundle at `Contents/MacOS/english-teacher`
+   - Receives hook input from stdin (JSON)
+   - Saves to `~/Library/Application Support/CCLangTutor/pending.json`
+   - Launches app, sends Distributed Notification
+
+2. **CCLangTutor.app** (SwiftUI)
+   - Listens for Distributed Notifications
+   - Processes pending prompts via Claude API
+   - Displays correction history
+
+### Build Commands
+
+```bash
+# Debug build
+./scripts/build.sh Debug
+
+# Release build
+./scripts/build.sh Release
+
+# Package DMG (includes notarization)
+./scripts/package_dmg.sh
+
+# Release new version
+./scripts/release.sh 1.0.0
+```
+
+### Key Files
+
+- `project.yml` - XcodeGen project definition
+- `Sources/CCLangTutor/` - App source code
+- `Sources/CCLangTutorCore/` - Shared models
+- `Sources/english-teacher/` - CLI hook
+
+### Environment
+
+- Requires `ANTHROPIC_API_KEY` for corrections to work
+- Data stored in `~/Library/Application Support/CCLangTutor/`
