@@ -9,9 +9,11 @@ final class CorrectionViewModel: ObservableObject {
     @Published var pendingPrompts: [PendingPrompt] = []
     @Published var isProcessing = false
     @Published var selectedCorrectionId: UUID?
+    @Published var isSendingChat = false
 
     private let storage = StorageManager.shared
     private let processor = CorrectionProcessor()
+    private let chatProcessor = ChatProcessor()
     nonisolated(unsafe) private var notificationObserver: Any?
 
     init() {
@@ -101,5 +103,52 @@ final class CorrectionViewModel: ObservableObject {
         corrections.removeAll()
         try? storage.saveCorrections(corrections)
         logger.info("Cleared all corrections")
+    }
+
+    // MARK: - Chat
+
+    func sendChatMessage(_ message: String, for correction: Correction) {
+        guard !isSendingChat else { return }
+
+        isSendingChat = true
+
+        // Add user message immediately
+        let userMessage = ChatMessage(role: .user, content: message)
+        updateCorrectionWithMessage(userMessage, correctionId: correction.id)
+
+        Task { @MainActor in
+            defer { self.isSendingChat = false }
+
+            do {
+                // Get current correction state
+                guard let currentCorrection = corrections.first(where: { $0.id == correction.id }) else {
+                    logger.error("Correction not found: \(correction.id)")
+                    return
+                }
+
+                let response = try await chatProcessor.sendMessage(
+                    message,
+                    correction: currentCorrection,
+                    previousMessages: Array(currentCorrection.chatMessages.dropLast()) // Exclude the just-added user message
+                )
+
+                let assistantMessage = ChatMessage(role: .assistant, content: response)
+                updateCorrectionWithMessage(assistantMessage, correctionId: correction.id)
+                logger.info("Chat response saved")
+            } catch {
+                logger.error("Chat error: \(error.localizedDescription)")
+                let errorMessage = ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)")
+                updateCorrectionWithMessage(errorMessage, correctionId: correction.id)
+            }
+        }
+    }
+
+    private func updateCorrectionWithMessage(_ message: ChatMessage, correctionId: UUID) {
+        guard let index = corrections.firstIndex(where: { $0.id == correctionId }) else {
+            return
+        }
+
+        corrections[index].chatMessages.append(message)
+        try? storage.updateCorrection(corrections[index])
     }
 }

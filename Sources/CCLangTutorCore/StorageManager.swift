@@ -80,4 +80,12 @@ final class StorageManager {
         corrections.insert(correction, at: 0) // newest first
         try saveCorrections(corrections)
     }
+
+    func updateCorrection(_ correction: Correction) throws {
+        var corrections = loadCorrections()
+        if let index = corrections.firstIndex(where: { $0.id == correction.id }) {
+            corrections[index] = correction
+            try saveCorrections(corrections)
+        }
+    }
 }

@@ -22,6 +22,7 @@ struct Correction: Codable, Identifiable {
     let corrected: String
     let errors: [CorrectionError]
     let isPerfect: Bool
+    var chatMessages: [ChatMessage]
 
     init(
         id: UUID = UUID(),
@@ -30,7 +31,8 @@ struct Correction: Codable, Identifiable {
         original: String,
         corrected: String,
         errors: [CorrectionError],
-        isPerfect: Bool
+        isPerfect: Bool,
+        chatMessages: [ChatMessage] = []
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -39,6 +41,7 @@ struct Correction: Codable, Identifiable {
         self.corrected = corrected
         self.errors = errors
         self.isPerfect = isPerfect
+        self.chatMessages = chatMessages
     }
 
     /// Create from a pending prompt after correction
@@ -50,6 +53,25 @@ struct Correction: Codable, Identifiable {
         self.corrected = corrected
         self.errors = errors
         self.isPerfect = errors.isEmpty
+        self.chatMessages = []
+    }
+
+    // MARK: - Codable (backward compatibility)
+
+    enum CodingKeys: String, CodingKey {
+        case id, timestamp, sessionId, original, corrected, errors, isPerfect, chatMessages
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        timestamp = try container.decode(Date.self, forKey: .timestamp)
+        sessionId = try container.decode(String.self, forKey: .sessionId)
+        original = try container.decode(String.self, forKey: .original)
+        corrected = try container.decode(String.self, forKey: .corrected)
+        errors = try container.decode([CorrectionError].self, forKey: .errors)
+        isPerfect = try container.decode(Bool.self, forKey: .isPerfect)
+        chatMessages = try container.decodeIfPresent([ChatMessage].self, forKey: .chatMessages) ?? []
     }
 }
 

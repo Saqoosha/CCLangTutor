@@ -2,30 +2,55 @@ import SwiftUI
 
 struct CorrectionDetailView: View {
     let correction: Correction
+    @EnvironmentObject var viewModel: CorrectionViewModel
     @State private var showCopiedToast = false
+    @State private var chatInputText = ""
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 32) {
-                    // Header with status
-                    headerSection
-                        .id("top")
+        VStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 32) {
+                        // Header with status
+                        headerSection
+                            .id("top")
 
-                    // Main diff view
-                    diffSection
+                        // Main diff view
+                        diffSection
 
-                    // Detailed errors
-                    if !correction.errors.isEmpty {
-                        errorsSection
+                        // Detailed errors
+                        if !correction.errors.isEmpty {
+                            errorsSection
+                        }
+
+                        Divider()
+                            .padding(.vertical, 8)
+
+                        // Chat section
+                        ChatView(correction: correction)
+                            .id("chat")
+
+                        Spacer(minLength: 80)
                     }
-
-                    Spacer(minLength: 40)
+                    .padding(24)
                 }
-                .padding(24)
+                .onChange(of: correction.id) {
+                    proxy.scrollTo("top", anchor: .top)
+                    chatInputText = ""
+                }
+                .onChange(of: correction.chatMessages.count) {
+                    withAnimation {
+                        proxy.scrollTo("chat", anchor: .bottom)
+                    }
+                }
             }
-            .onChange(of: correction.id) {
-                proxy.scrollTo("top", anchor: .top)
+
+            // Fixed input bar at bottom
+            ChatInputView(
+                inputText: $chatInputText,
+                isSending: viewModel.isSendingChat
+            ) {
+                sendMessage()
             }
         }
         .background(Color(nsColor: .windowBackgroundColor))
@@ -41,9 +66,17 @@ struct CorrectionDetailView: View {
         .overlay(alignment: .bottom) {
             if showCopiedToast {
                 copiedToast
+                    .padding(.bottom, 70)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+    }
+
+    private func sendMessage() {
+        let text = chatInputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        chatInputText = ""
+        viewModel.sendChatMessage(text, for: correction)
     }
 
     // MARK: - Header Section
