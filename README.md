@@ -6,47 +6,11 @@
   A macOS app that automatically corrects English grammar in your Claude Code prompts.
 </p>
 
-## Overview
-
-CCLangTutor integrates with Claude Code via hooks to provide real-time English grammar corrections. When you submit a prompt in Claude Code, the app captures it, sends it to your configured AI provider (Claude, Gemini, or OpenAI) for correction, and displays the results in a native macOS interface.
-
-## Architecture
-
-```
-User prompt → Claude Code Hook (UserPromptSubmit)
-                    ↓
-            english-teacher CLI
-                    ↓
-            pending.json (stored)
-                    ↓
-            CCLangTutor.app (processes)
-                    ↓
-            Claude API (Haiku) → corrections.json
-                    ↓
-            SwiftUI displays results
-```
-
 ## Installation
-
-### From DMG (Recommended)
 
 1. Download the latest `.dmg` from [Releases](https://github.com/Saqoosha/CCLangTutor/releases)
 2. Open the DMG and drag `CCLangTutor.app` to Applications
 3. Run the app once to register the hook
-
-### From Source
-
-```bash
-# Clone the repository
-git clone https://github.com/Saqoosha/CCLangTutor.git
-cd CCLangTutor
-
-# Build release version
-./scripts/build.sh Release
-
-# The app is located at:
-# build/DerivedData/Build/Products/Release/CCLangTutor.app
-```
 
 ## Configuration
 
@@ -91,27 +55,7 @@ Add the following to your Claude Code settings (`~/.claude/settings.json`):
 
 When you use slash commands (e.g., `/commit message here`), only the argument portion is corrected, not the command itself.
 
-## Data Storage
-
-All data is stored locally in:
-- `~/Library/Application Support/CCLangTutor/pending.json` - Prompts awaiting correction
-- `~/Library/Application Support/CCLangTutor/corrections.json` - Correction history
-
 ## Limitations
-
-### Prompts During Processing Not Captured
-
-When you send a message while Claude Code is processing (generating a response), **that message is not captured for correction**.
-
-This is a limitation of Claude Code's hook system - the `UserPromptSubmit` hook only fires for regular prompt submissions, not for "interrupt" messages sent during processing.
-
-### AskUserQuestion Responses Not Captured
-
-When Claude Code uses the `AskUserQuestion` tool to ask you a question with options, and you select "Other" to provide a custom text response, **this input is not captured for correction**.
-
-This is also a limitation of Claude Code's hook system - the `UserPromptSubmit` hook only fires for regular prompt submissions, not for responses to tool questions.
-
-### Summary
 
 **What gets corrected:**
 - Regular prompts typed in the main input (when Claude is idle)
@@ -122,7 +66,33 @@ This is also a limitation of Claude Code's hook system - the `UserPromptSubmit` 
 - Responses to `AskUserQuestion` tool (including "Other" custom text)
 - Selecting predefined options (these are not user-written text anyway)
 
+This is a limitation of Claude Code's hook system - the `UserPromptSubmit` hook only fires for regular prompt submissions.
+
+## Privacy
+
+All your prompts are sent to the LLM provider you select (Claude, Gemini, or OpenAI) for grammar correction. If you have concerns about sending your prompts to external services, do not use this app.
+
+Correction history is stored locally in `~/Library/Application Support/CCLangTutor/`.
+
+---
+
 ## Development
+
+### Architecture
+
+```
+User prompt → Claude Code Hook (UserPromptSubmit)
+                    ↓
+            english-teacher CLI
+                    ↓
+            pending.json (stored)
+                    ↓
+            CCLangTutor.app (processes)
+                    ↓
+            Claude API (Haiku) → corrections.json
+                    ↓
+            SwiftUI displays results
+```
 
 ### Requirements
 
@@ -130,20 +100,24 @@ This is also a limitation of Claude Code's hook system - the `UserPromptSubmit` 
 - Xcode 16.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 
+### Build from Source
+
+```bash
+git clone https://github.com/Saqoosha/CCLangTutor.git
+cd CCLangTutor
+./scripts/build.sh Release
+
+# The app is located at:
+# build/DerivedData/Build/Products/Release/CCLangTutor.app
+```
+
 ### Build Commands
 
 ```bash
-# Debug build
-./scripts/build.sh Debug
-
-# Release build
-./scripts/build.sh Release
-
-# Package DMG (includes notarization)
-./scripts/package_dmg.sh
-
-# Release new version
-./scripts/release.sh 1.0.0
+./scripts/build.sh Debug      # Debug build
+./scripts/build.sh Release    # Release build
+./scripts/package_dmg.sh      # Package DMG (includes notarization)
+./scripts/release.sh 1.0.0    # Release new version
 ```
 
 ### Project Structure
