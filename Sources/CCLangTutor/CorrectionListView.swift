@@ -5,7 +5,7 @@ struct CorrectionListView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            List(selection: $viewModel.selectedCorrectionId) {
+            List {
                 if !viewModel.pendingPrompts.isEmpty {
                     Section {
                         ForEach(viewModel.pendingPrompts) { prompt in
@@ -21,12 +21,21 @@ struct CorrectionListView: View {
 
                 Section {
                     ForEach(viewModel.corrections) { correction in
+                        let isSelected = viewModel.selectedCorrectionId == correction.id
                         CorrectionRowView(
                             correction: correction,
-                            isSelected: viewModel.selectedCorrectionId == correction.id
+                            isSelected: isSelected
                         )
-                        .tag(correction.id)
                         .id(correction.id)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+                                .padding(.horizontal, 4)
+                        )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            viewModel.selectedCorrectionId = correction.id
+                        }
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
@@ -92,25 +101,24 @@ struct CorrectionRowView: View {
                 Text(correction.original)
                     .lineLimit(2)
                     .font(.body)
-                    .foregroundStyle(isSelected ? .white : .primary)
 
                 HStack(spacing: 8) {
                     if correction.isPerfect {
                         Label("Perfect", systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(isSelected ? .white.opacity(0.9) : .green)
+                            .foregroundStyle(.green)
                     } else {
                         Label("\(correction.errors.count) issue\(correction.errors.count == 1 ? "" : "s")", systemImage: "pencil.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(isSelected ? .white.opacity(0.9) : statusColor)
+                            .foregroundStyle(statusColor)
                     }
 
                     Text("·")
-                        .foregroundStyle(isSelected ? Color.white.opacity(0.5) : Color.secondary.opacity(0.5))
+                        .foregroundStyle(Color.secondary.opacity(0.5))
 
                     Text(timeAgo)
                         .font(.caption)
-                        .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -121,12 +129,12 @@ struct CorrectionRowView: View {
     private var statusBadge: some View {
         ZStack {
             Circle()
-                .fill(isSelected ? .white.opacity(0.2) : statusColor.opacity(0.15))
+                .fill(statusColor.opacity(0.15))
                 .frame(width: 32, height: 32)
 
             Image(systemName: statusIcon)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(isSelected ? .white : statusColor)
+                .foregroundStyle(statusColor)
         }
     }
 
