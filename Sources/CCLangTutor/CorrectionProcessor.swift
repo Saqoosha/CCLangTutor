@@ -75,7 +75,15 @@ actor CorrectionProcessor {
 
     @MainActor
     private func getSystemPrompt() -> String {
-        UserDefaults.standard.string(forKey: "systemPrompt") ?? SettingsView.defaultSystemPrompt
+        let basePrompt = UserDefaults.standard.string(forKey: "systemPrompt") ?? SettingsView.defaultSystemPrompt
+        let languageCode = UserDefaults.standard.string(forKey: "responseLanguage") ?? ResponseLanguage.english.rawValue
+        let language = ResponseLanguage(rawValue: languageCode) ?? .english
+
+        if language == .english {
+            return basePrompt
+        }
+
+        return basePrompt + "\n\nIMPORTANT: Write all explanations in \(language.languageName)."
     }
 
     private func getAPIKey(for provider: AIProvider) -> String? {

@@ -1,8 +1,43 @@
 import SwiftUI
 
+enum ResponseLanguage: String, CaseIterable {
+    case english = "en"
+    case japanese = "ja"
+    case spanish = "es"
+    case french = "fr"
+    case german = "de"
+    case chinese = "zh"
+    case korean = "ko"
+
+    var displayName: String {
+        switch self {
+        case .english: return "English"
+        case .japanese: return "日本語"
+        case .spanish: return "Español"
+        case .french: return "Français"
+        case .german: return "Deutsch"
+        case .chinese: return "中文"
+        case .korean: return "한국어"
+        }
+    }
+
+    var languageName: String {
+        switch self {
+        case .english: return "English"
+        case .japanese: return "Japanese"
+        case .spanish: return "Spanish"
+        case .french: return "French"
+        case .german: return "German"
+        case .chinese: return "Chinese"
+        case .korean: return "Korean"
+        }
+    }
+}
+
 struct SettingsView: View {
     @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.claudeAPI.rawValue
     @AppStorage("systemPrompt") private var systemPrompt = SettingsView.defaultSystemPrompt
+    @AppStorage("responseLanguage") private var responseLanguage = ResponseLanguage.english.rawValue
 
     @State private var claudeAPIKey = ""
     @State private var geminiAPIKey = ""
@@ -61,6 +96,18 @@ struct SettingsView: View {
             }
 
             Section {
+                Picker("Explanations in", selection: $responseLanguage) {
+                    ForEach(ResponseLanguage.allCases, id: \.rawValue) { lang in
+                        Text(lang.displayName).tag(lang.rawValue)
+                    }
+                }
+            } header: {
+                Text("Response Language")
+            } footer: {
+                Text("Language for correction explanations and chat responses")
+            }
+
+            Section {
                 TextEditor(text: $systemPrompt)
                     .font(.system(.caption, design: .monospaced))
                     .frame(height: 80)
@@ -75,7 +122,8 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .scrollDisabled(true)
-        .frame(width: 450, height: 500)
+        .frame(width: 450)
+        .fixedSize(horizontal: false, vertical: true)
         .alert("API Key", isPresented: $showingSaveConfirmation) {
             Button("OK") { }
         } message: {

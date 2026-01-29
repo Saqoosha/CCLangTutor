@@ -88,8 +88,16 @@ actor ChatProcessor {
         - Answer questions about these corrections helpfully
         - Provide examples when useful
         - Keep responses concise but thorough
-        - Use simple, clear English
         """
+
+        let languageCode = UserDefaults.standard.string(forKey: "responseLanguage") ?? ResponseLanguage.english.rawValue
+        let language = ResponseLanguage(rawValue: languageCode) ?? .english
+
+        if language == .english {
+            prompt += "\n- Use simple, clear English"
+        } else {
+            prompt += "\n- IMPORTANT: Respond in \(language.languageName)"
+        }
 
         return prompt
     }
