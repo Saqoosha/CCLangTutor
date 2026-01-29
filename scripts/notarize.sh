@@ -24,6 +24,12 @@ find "$APP_PATH" -type f -name "*.dylib" -o -name "*.framework" | while read -r 
   codesign --force --options runtime --timestamp --sign "$DEVELOPER_ID" "$item" 2>/dev/null || true
 done
 
+# Sign all executables in MacOS directory (including helper CLIs)
+find "$APP_PATH/Contents/MacOS" -type f -perm +111 ! -name "$APP_NAME" | while read -r exe; do
+  echo "Signing executable: $(basename "$exe")"
+  codesign --force --options runtime --timestamp --sign "$DEVELOPER_ID" "$exe"
+done
+
 # Sign the main app bundle
 codesign --force --options runtime --timestamp --sign "$DEVELOPER_ID" "$APP_PATH"
 
