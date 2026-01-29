@@ -3,7 +3,6 @@ import SwiftUI
 struct CorrectionDetailView: View {
     let correction: Correction
     @EnvironmentObject var viewModel: CorrectionViewModel
-    @State private var showCopiedToast = false
     @State private var chatInputText = ""
 
     var body: some View {
@@ -55,21 +54,6 @@ struct CorrectionDetailView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .navigationTitle(formattedDate)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: copyToClipboard) {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-                .help("Copy corrected text")
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if showCopiedToast {
-                copiedToast
-                    .padding(.bottom, 70)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
     }
 
     private func sendMessage() {
@@ -190,21 +174,6 @@ struct CorrectionDetailView: View {
         }
     }
 
-    // MARK: - Toast
-
-    private var copiedToast: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-            Text("Copied to clipboard")
-                .font(.subheadline.weight(.medium))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
-        .padding(.bottom, 20)
-    }
-
     // MARK: - Helpers
 
     private var statusGradient: LinearGradient {
@@ -246,21 +215,6 @@ struct CorrectionDetailView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: correction.timestamp)
-    }
-
-    private func copyToClipboard() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(correction.corrected, forType: .string)
-
-        withAnimation(.spring(response: 0.3)) {
-            showCopiedToast = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation(.spring(response: 0.3)) {
-                showCopiedToast = false
-            }
-        }
     }
 }
 
