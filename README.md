@@ -6,6 +6,8 @@
   A macOS app that automatically corrects English grammar in your Claude Code prompts.
 </p>
 
+English | [日本語](README.ja.md)
+
 ## Installation
 
 1. Download the latest `.dmg` from [Releases](https://github.com/Saqoosha/CCLangTutor/releases)
@@ -22,6 +24,20 @@
 4. Click "Save"
 
 The API key is stored securely in macOS Keychain.
+
+### Response Language
+
+You can choose the language for correction explanations and chat responses:
+
+- English (default)
+- 日本語 (Japanese)
+- Español (Spanish)
+- Français (French)
+- Deutsch (German)
+- 中文 (Chinese)
+- 한국어 (Korean)
+
+Note: The target language for corrections is always English. This setting only affects the language of explanations.
 
 ### Claude Code Hook
 

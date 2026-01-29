@@ -57,7 +57,13 @@ pkill -x CCLangTutor; ./scripts/build.sh Release
 - `Sources/CCLangTutorCore/` - Shared models
 - `Sources/english-teacher/` - CLI hook
 
+### Key Settings
+
+- `aiProvider` - Selected AI provider (claude, gemini, openai)
+- `responseLanguage` - Language for explanations (en, ja, es, fr, de, zh, ko)
+- `systemPrompt` - Custom tutor personality prompt
+
 ### Environment
 
-- Requires `ANTHROPIC_API_KEY` for corrections to work
+- Requires API key for selected provider (stored in Keychain)
 - Data stored in `~/Library/Application Support/CCLangTutor/`

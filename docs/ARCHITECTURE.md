@@ -67,9 +67,10 @@ Sources/
 │   ├── ContentView.swift     # NavigationSplitView layout
 │   ├── CorrectionListView.swift    # Sidebar list
 │   ├── CorrectionDetailView.swift  # Detail view with diff
-│   ├── SettingsView.swift    # API keys, provider selection
+│   ├── SettingsView.swift    # API keys, provider, language selection
 │   ├── CorrectionViewModel.swift   # State management
-│   ├── CorrectionProcessor.swift   # AI API calls (Actor)
+│   ├── CorrectionProcessor.swift   # AI API calls for corrections (Actor)
+│   ├── ChatProcessor.swift   # AI API calls for chat (Actor)
 │   ├── AIProvider.swift      # Provider enum
 │   └── KeychainHelper.swift  # Secure key storage
 │
@@ -162,9 +163,26 @@ DistributedNotificationCenter.default().addObserver(
 ### API Request Flow
 
 1. Build system prompt with response format instructions
-2. Send user prompt to selected provider
-3. Parse JSON response into `CorrectionResult`
-4. Convert to `Correction` model and save
+2. Append language instruction based on `responseLanguage` setting
+3. Send user prompt to selected provider
+4. Parse JSON response into `CorrectionResult`
+5. Convert to `Correction` model and save
+
+### Response Language
+
+Explanations can be provided in 7 languages (stored in `UserDefaults`):
+
+| Code | Language |
+|------|----------|
+| `en` | English (default) |
+| `ja` | Japanese |
+| `es` | Spanish |
+| `fr` | French |
+| `de` | German |
+| `zh` | Chinese |
+| `ko` | Korean |
+
+The system prompt is dynamically modified to include language instructions when non-English is selected.
 
 ### Expected Response Format
 ```json
