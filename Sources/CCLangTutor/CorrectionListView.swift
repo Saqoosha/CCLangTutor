@@ -32,7 +32,6 @@ struct CorrectionListView: View {
                                 .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
                                 .padding(.horizontal, 4)
                         )
-                        .contentShape(Rectangle())
                         .onTapGesture {
                             viewModel.selectedCorrectionId = correction.id
                         }
@@ -122,7 +121,9 @@ struct CorrectionRowView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 6)
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder
