@@ -259,6 +259,7 @@ struct ErrorCardView: View {
                 Text(error.explanation)
                     .font(.title3)
                     .foregroundStyle(.secondary)
+                    .lineSpacing(6)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
