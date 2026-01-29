@@ -10,7 +10,8 @@ struct ChatMessageView: View {
             }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-                Text(message.content)
+                Text(markdownContent)
+                    .font(.system(size: 14))
                     .foregroundStyle(message.role == .user ? .white : .primary)
                     .textSelection(.enabled)
                     .padding(.horizontal, 14)
@@ -26,6 +27,16 @@ struct ChatMessageView: View {
             if message.role == .assistant {
                 Spacer(minLength: 60)
             }
+        }
+    }
+
+    private var markdownContent: AttributedString {
+        do {
+            var options = AttributedString.MarkdownParsingOptions()
+            options.interpretedSyntax = .inlineOnlyPreservingWhitespace
+            return try AttributedString(markdown: message.content, options: options)
+        } catch {
+            return AttributedString(message.content)
         }
     }
 
