@@ -31,10 +31,23 @@ func main() {
 
     let sessionId = input.sessionId ?? "unknown"
 
+    // Handle slash commands
+    var textToCorrect = prompt
+    if prompt.hasPrefix("/") {
+        // Extract command and args
+        let parts = prompt.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
+        if parts.count <= 1 {
+            // Slash command without args, skip entirely
+            exit(0)
+        }
+        // Use only the args part for correction
+        textToCorrect = String(parts[1])
+    }
+
     // Create pending prompt
     let pendingPrompt = PendingPrompt(
         sessionId: sessionId,
-        prompt: prompt
+        prompt: textToCorrect
     )
 
     // Save to pending.json
