@@ -1,3 +1,5 @@
+[English](README.md) | 日本語
+
 # CCLangTutor
 
 <p align="center">
@@ -5,8 +7,6 @@
   <br>
   Claude Code のプロンプトの英文法を自動的に添削する macOS アプリ
 </p>
-
-[English](README.md) | 日本語
 
 ## インストール
 

@@ -1,3 +1,5 @@
+English | [日本語](README.ja.md)
+
 # CCLangTutor
 
 <p align="center">
@@ -5,8 +7,6 @@
   <br>
   A macOS app that automatically corrects English grammar in your Claude Code prompts.
 </p>
-
-English | [日本語](README.ja.md)
 
 ## Installation
 
