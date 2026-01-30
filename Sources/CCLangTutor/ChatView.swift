@@ -22,6 +22,7 @@ struct ChatView: View {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     ForEach(correction.chatMessages) { message in
                         ChatMessageView(message: message)
+                            .id(message.id)
                     }
                 }
             } else {

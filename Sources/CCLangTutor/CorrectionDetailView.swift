@@ -4,6 +4,7 @@ struct CorrectionDetailView: View {
     let correction: Correction
     @EnvironmentObject var viewModel: CorrectionViewModel
     @State private var chatInputText = ""
+    @State private var lastChatMessageCount: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,18 +33,28 @@ struct CorrectionDetailView: View {
 
                         // Chat section
                         ChatView(correction: correction)
-                            .id("chat")
                     }
                     .padding(24)
                 }
                 .onChange(of: correction.id) {
                     proxy.scrollTo("top", anchor: .top)
                     chatInputText = ""
+                    lastChatMessageCount = correction.chatMessages.count
                 }
-                .onChange(of: correction.chatMessages.count) {
-                    withAnimation {
-                        proxy.scrollTo("chat", anchor: .bottom)
+                .onChange(of: correction.chatMessages.count) { oldCount, newCount in
+                    // Only scroll if a new message was added (not on selection change)
+                    if newCount > lastChatMessageCount {
+                        // Find the last user message and scroll to it at top
+                        if let lastUserMessage = correction.chatMessages.last(where: { $0.role == .user }) {
+                            withAnimation {
+                                proxy.scrollTo(lastUserMessage.id, anchor: .top)
+                            }
+                        }
                     }
+                    lastChatMessageCount = newCount
+                }
+                .onAppear {
+                    lastChatMessageCount = correction.chatMessages.count
                 }
             }
 
