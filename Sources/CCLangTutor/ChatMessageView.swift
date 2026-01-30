@@ -44,7 +44,7 @@ struct ChatMessageView: View {
         if message.role == .user {
             return AnyShapeStyle(Color.accentColor)
         } else {
-            return AnyShapeStyle(Color(nsColor: .controlBackgroundColor))
+            return AnyShapeStyle(Color.secondary.opacity(0.08))
         }
     }
 
