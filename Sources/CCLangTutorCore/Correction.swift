@@ -25,6 +25,7 @@ struct Correction: Codable, Identifiable {
     let score: Int
     let advice: String?
     var chatMessages: [ChatMessage]
+    let skipped: Bool
 
     init(
         id: UUID = UUID(),
@@ -36,7 +37,8 @@ struct Correction: Codable, Identifiable {
         isPerfect: Bool,
         score: Int = 100,
         advice: String? = nil,
-        chatMessages: [ChatMessage] = []
+        chatMessages: [ChatMessage] = [],
+        skipped: Bool = false
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -48,10 +50,11 @@ struct Correction: Codable, Identifiable {
         self.score = score
         self.advice = advice
         self.chatMessages = chatMessages
+        self.skipped = skipped
     }
 
     /// Create from a pending prompt after correction
-    init(from pending: PendingPrompt, corrected: String, errors: [CorrectionError], score: Int, advice: String?) {
+    init(from pending: PendingPrompt, corrected: String, errors: [CorrectionError], score: Int, advice: String?, skipped: Bool = false) {
         self.id = pending.id
         self.timestamp = pending.timestamp
         self.sessionId = pending.sessionId
@@ -62,12 +65,13 @@ struct Correction: Codable, Identifiable {
         self.score = score
         self.advice = advice
         self.chatMessages = []
+        self.skipped = skipped
     }
 
     // MARK: - Codable (backward compatibility)
 
     enum CodingKeys: String, CodingKey {
-        case id, timestamp, sessionId, original, corrected, errors, isPerfect, score, advice, chatMessages
+        case id, timestamp, sessionId, original, corrected, errors, isPerfect, score, advice, chatMessages, skipped
     }
 
     init(from decoder: Decoder) throws {
@@ -82,6 +86,7 @@ struct Correction: Codable, Identifiable {
         score = try container.decodeIfPresent(Int.self, forKey: .score) ?? (isPerfect ? 100 : 70)
         advice = try container.decodeIfPresent(String.self, forKey: .advice)
         chatMessages = try container.decodeIfPresent([ChatMessage].self, forKey: .chatMessages) ?? []
+        skipped = try container.decodeIfPresent(Bool.self, forKey: .skipped) ?? false
     }
 }
 

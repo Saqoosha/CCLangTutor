@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 import SwiftUI
 import os
 
@@ -34,6 +35,19 @@ enum APIError: LocalizedError {
 
 actor CorrectionProcessor {
     func process(_ prompt: PendingPrompt) async throws -> Correction {
+        // Skip non-English input
+        if !isEnglish(prompt.prompt) {
+            logger.info("Skipping non-English input")
+            return Correction(
+                from: prompt,
+                corrected: prompt.prompt,
+                errors: [],
+                score: 100,
+                advice: nil,
+                skipped: true
+            )
+        }
+
         let provider = await getProvider()
         let apiKey = getAPIKey(for: provider)
         let systemPrompt = await getSystemPrompt()
@@ -283,6 +297,15 @@ actor CorrectionProcessor {
             return String(text[start...end])
         }
         return nil
+    }
+
+    private func isEnglish(_ text: String) -> Bool {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        guard let language = recognizer.dominantLanguage else {
+            return true // Default to English if undetermined
+        }
+        return language == .english
     }
 }
 

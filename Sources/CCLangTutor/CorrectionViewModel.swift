@@ -111,6 +111,15 @@ final class CorrectionViewModel: ObservableObject {
                 logger.info("Processing prompt: \(prompt.prompt.prefix(50))...")
                 do {
                     let correction = try await processor.process(prompt)
+
+                    // Skip non-English input (don't save, just remove from pending)
+                    if correction.skipped {
+                        logger.info("Skipped non-English prompt")
+                        try? storage.removePendingPrompt(id: prompt.id)
+                        self.pendingPrompts.removeAll { $0.id == prompt.id }
+                        continue
+                    }
+
                     logger.info("Got correction. errors=\(correction.errors.count), isPerfect=\(correction.isPerfect)")
                     try storage.appendCorrection(correction)
                     try storage.removePendingPrompt(id: prompt.id)
