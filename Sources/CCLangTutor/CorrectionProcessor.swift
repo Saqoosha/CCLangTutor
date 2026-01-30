@@ -217,7 +217,10 @@ actor CorrectionProcessor {
           "isPerfect": true/false (true if no errors found)
         }
 
-        If the text is already perfect, return isPerfect: true with an empty errors array.
+        IMPORTANT:
+        - If the text is already perfect, return isPerfect: true with an empty errors array.
+        - Only include items in errors where original != corrected (actual changes).
+        - Do NOT add entries where original and corrected are the same.
         """
     }
 
@@ -239,13 +242,16 @@ actor CorrectionProcessor {
             throw APIError.parseError(error.localizedDescription)
         }
 
-        let errors = result.errors.map {
-            CorrectionError(
-                original: $0.original,
-                corrected: $0.corrected,
-                explanation: $0.explanation
-            )
-        }
+        // Filter out errors where original == corrected (no actual change)
+        let errors = result.errors
+            .filter { $0.original != $0.corrected }
+            .map {
+                CorrectionError(
+                    original: $0.original,
+                    corrected: $0.corrected,
+                    explanation: $0.explanation
+                )
+            }
 
         return Correction(
             from: prompt,
