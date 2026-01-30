@@ -14,7 +14,7 @@ CCLangTutor is a macOS app that automatically corrects English grammar in Claude
                       │ stdin (JSON)
                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                     english-teacher CLI                          │
+│                         notifier CLI                             │
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │ 1. Parse JSON input                                         ││
 │  │ 2. Skip slash commands without args                         ││
@@ -81,7 +81,7 @@ Sources/
 │   ├── StorageManager.swift  # JSON file I/O
 │   └── NotificationNames.swift # DistributedNotification names
 │
-└── english-teacher/          # CLI hook
+└── notifier/                 # CLI hook
     └── main.swift            # Hook entry point
 ```
 
@@ -285,11 +285,11 @@ xcodebuild -project CCLangTutor.xcodeproj \
 
 # Build CLI
 xcodebuild -project CCLangTutor.xcodeproj \
-           -scheme english-teacher \
+           -scheme notifier \
            -configuration Debug
 
 # Copy CLI into app bundle
-cp english-teacher CCLangTutor.app/Contents/MacOS/
+cp notifier CCLangTutor.app/Contents/MacOS/
 ```
 
 ## Deployment
@@ -311,7 +311,7 @@ cp english-teacher CCLangTutor.app/Contents/MacOS/
     "UserPromptSubmit": [{
       "hooks": [{
         "type": "command",
-        "command": "/path/to/CCLangTutor.app/Contents/MacOS/english-teacher"
+        "command": "/path/to/CCLangTutor.app/Contents/MacOS/notifier"
       }]
     }]
   }

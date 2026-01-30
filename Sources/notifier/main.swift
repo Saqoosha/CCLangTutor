@@ -32,7 +32,7 @@ struct HookInput: Decodable {
 }
 
 func main() {
-    log("english-teacher started")
+    log("notifier started")
 
     // Read JSON from stdin
     let inputData = FileHandle.standardInput.readDataToEndOfFile()

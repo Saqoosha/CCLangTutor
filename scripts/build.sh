@@ -22,7 +22,7 @@ xcodebuild \
 
 # Build CLI
 xcodebuild \
-  -scheme english-teacher \
+  -scheme notifier \
   -configuration "${CONFIGURATION}" \
   -destination 'platform=macOS' \
   -derivedDataPath "${DERIVED_DATA_DIR}" \
@@ -30,11 +30,11 @@ xcodebuild \
 
 # Copy CLI into app bundle
 APP_PATH="${DERIVED_DATA_DIR}/Build/Products/${CONFIGURATION}/CCLangTutor.app"
-CLI_PATH="${DERIVED_DATA_DIR}/Build/Products/${CONFIGURATION}/english-teacher"
+CLI_PATH="${DERIVED_DATA_DIR}/Build/Products/${CONFIGURATION}/notifier"
 
 if [[ -f "$CLI_PATH" && -d "$APP_PATH" ]]; then
   cp "$CLI_PATH" "${APP_PATH}/Contents/MacOS/"
-  echo "Copied english-teacher CLI into app bundle"
+  echo "Copied notifier CLI into app bundle"
 fi
 
 echo "Built app:"

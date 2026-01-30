@@ -51,7 +51,7 @@ Add the following to your Claude Code settings (`~/.claude/settings.json`):
         "hooks": [
           {
             "type": "command",
-            "command": "/Applications/CCLangTutor.app/Contents/MacOS/english-teacher"
+            "command": "/Applications/CCLangTutor.app/Contents/MacOS/notifier"
           }
         ]
       }
@@ -99,7 +99,7 @@ Correction history is stored locally in `~/Library/Application Support/CCLangTut
 ```
 User prompt → Claude Code Hook (UserPromptSubmit)
                     ↓
-            english-teacher CLI
+            notifier CLI
                     ↓
             pending.json (stored)
                     ↓
@@ -142,7 +142,7 @@ cd CCLangTutor
 Sources/
 ├── CCLangTutor/          # Main app (SwiftUI)
 ├── CCLangTutorCore/      # Shared models
-└── english-teacher/      # CLI hook
+└── notifier/             # CLI hook
 ```
 
 ## License

@@ -30,14 +30,15 @@ enum HookManager {
     /// Unique identifiers for CCLangTutor hook command (used for detection and removal)
     /// Uses multiple patterns to avoid false positives while catching various install locations
     private static let hookIdentifiers = [
-        "/CCLangTutor.app/Contents/MacOS/english-teacher",  // Standard app bundle path
+        "/CCLangTutor.app/Contents/MacOS/notifier",  // Standard app bundle path
+        "/CCLangTutor.app/Contents/MacOS/english-teacher",  // Legacy path (for migration)
         "CCLangTutor.app/",  // Fallback: any CCLangTutor.app bundle
     ]
 
-    /// Get the path to the english-teacher CLI in the app bundle
-    private static func getEnglishTeacherPath() -> String? {
+    /// Get the path to the notifier CLI in the app bundle
+    private static func getNotifierPath() -> String? {
         guard let bundlePath = Bundle.main.bundlePath as String? else { return nil }
-        let cliPath = "\(bundlePath)/Contents/MacOS/english-teacher"
+        let cliPath = "\(bundlePath)/Contents/MacOS/notifier"
         return FileManager.default.fileExists(atPath: cliPath) ? cliPath : nil
     }
 
@@ -61,7 +62,7 @@ enum HookManager {
             // Skip if already installed
             if isHookConfigured() { return }
 
-            guard let cliPath = getEnglishTeacherPath() else {
+            guard let cliPath = getNotifierPath() else {
                 throw HookManagerError.appBundleNotFound
             }
 

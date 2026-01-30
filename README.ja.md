@@ -51,7 +51,7 @@ Claude Code の設定ファイル (`~/.claude/settings.json`) に以下を追加
         "hooks": [
           {
             "type": "command",
-            "command": "/Applications/CCLangTutor.app/Contents/MacOS/english-teacher"
+            "command": "/Applications/CCLangTutor.app/Contents/MacOS/notifier"
           }
         ]
       }
@@ -99,7 +99,7 @@ Claude Code の設定ファイル (`~/.claude/settings.json`) に以下を追加
 ```
 User prompt → Claude Code Hook (UserPromptSubmit)
                     ↓
-            english-teacher CLI
+            notifier CLI
                     ↓
             pending.json (stored)
                     ↓
@@ -142,7 +142,7 @@ cd CCLangTutor
 Sources/
 ├── CCLangTutor/          # メインアプリ (SwiftUI)
 ├── CCLangTutorCore/      # 共有モデル
-└── english-teacher/      # CLI hook
+└── notifier/             # CLI hook
 ```
 
 ## ライセンス

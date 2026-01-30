@@ -9,7 +9,7 @@ CCLangTutor is a macOS app that automatically corrects English grammar in Claude
 ```
 User prompt → Claude Code Hook (UserPromptSubmit)
                     ↓
-            english-teacher CLI
+            notifier CLI
                     ↓
             pending.json (stored)
                     ↓
@@ -22,7 +22,7 @@ User prompt → Claude Code Hook (UserPromptSubmit)
 
 ### Components
 
-1. **english-teacher** (CLI) - Located in app bundle at `Contents/MacOS/english-teacher`
+1. **notifier** (CLI) - Located in app bundle at `Contents/MacOS/notifier`
    - Receives hook input from stdin (JSON)
    - Saves to `~/Library/Application Support/CCLangTutor/pending.json`
    - Launches app, sends Distributed Notification
@@ -55,7 +55,7 @@ pkill -x CCLangTutor; ./scripts/build.sh Release
 - `project.yml` - XcodeGen project definition
 - `Sources/CCLangTutor/` - App source code
 - `Sources/CCLangTutorCore/` - Shared models
-- `Sources/english-teacher/` - CLI hook
+- `Sources/notifier/` - CLI hook
 
 ### Key Settings
 
