@@ -55,6 +55,21 @@ func main() {
 
     let sessionId = input.sessionId ?? "unknown"
 
+    // Skip system-generated messages (not human prompts)
+    let systemTags = [
+        "<task-notification>",
+        "<system-reminder>",
+        "<local-command-caveat>",
+        "<command-name>",
+        "<function_results>",
+    ]
+    for tag in systemTags {
+        if prompt.contains(tag) {
+            log("Skipping system message containing \(tag)")
+            exit(0)
+        }
+    }
+
     // Handle slash commands
     var textToCorrect = prompt
     if prompt.hasPrefix("/") {
