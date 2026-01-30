@@ -46,8 +46,26 @@ final class CorrectionViewModel: ObservableObject {
 
     func loadData() {
         corrections = storage.loadCorrections()
-        pendingPrompts = storage.loadPendingPrompts()
-        logger.info("Loaded data: \(self.corrections.count) corrections, \(self.pendingPrompts.count) pending")
+        let allPending = storage.loadPendingPrompts()
+
+        // Filter out prompts that have already been corrected
+        let correctedOriginals = Set(corrections.map { $0.original })
+        let (alreadyCorrected, newPending) = allPending.reduce(into: ([PendingPrompt](), [PendingPrompt]())) { result, prompt in
+            if correctedOriginals.contains(prompt.prompt) {
+                result.0.append(prompt)
+            } else {
+                result.1.append(prompt)
+            }
+        }
+
+        // Remove already-corrected prompts from storage
+        for prompt in alreadyCorrected {
+            logger.info("Removing already corrected prompt from pending: \(prompt.prompt.prefix(50))...")
+            try? storage.removePendingPrompt(id: prompt.id)
+        }
+
+        pendingPrompts = newPending
+        logger.info("Loaded data: \(self.corrections.count) corrections, \(self.pendingPrompts.count) pending (filtered \(alreadyCorrected.count) duplicates)")
 
         if selectedCorrectionId == nil, let first = corrections.first {
             selectedCorrectionId = first.id
@@ -78,7 +96,18 @@ final class CorrectionViewModel: ObservableObject {
                 }
             }
 
+            // Build a set of already-corrected prompts for fast lookup
+            let correctedOriginals = Set(self.corrections.map { $0.original })
+
             for prompt in promptsToProcess {
+                // Skip if this exact prompt was already corrected before
+                if correctedOriginals.contains(prompt.prompt) {
+                    logger.info("Skipping already corrected prompt: \(prompt.prompt.prefix(50))...")
+                    try? storage.removePendingPrompt(id: prompt.id)
+                    self.pendingPrompts.removeAll { $0.id == prompt.id }
+                    continue
+                }
+
                 logger.info("Processing prompt: \(prompt.prompt.prefix(50))...")
                 do {
                     let correction = try await processor.process(prompt)
