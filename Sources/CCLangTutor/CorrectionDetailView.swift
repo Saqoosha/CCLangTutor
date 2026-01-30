@@ -33,8 +33,6 @@ struct CorrectionDetailView: View {
                         // Chat section
                         ChatView(correction: correction)
                             .id("chat")
-
-                        Spacer(minLength: 80)
                     }
                     .padding(24)
                 }
