@@ -130,33 +130,28 @@ struct CorrectionRowView: View {
     private var statusBadge: some View {
         ZStack {
             Circle()
-                .fill(statusColor.opacity(0.15))
+                .fill(scoreColor.opacity(0.15))
                 .frame(width: 32, height: 32)
 
-            Image(systemName: statusIcon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(statusColor)
+            Text("\(correction.score)")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(scoreColor)
         }
     }
 
-    private var statusIcon: String {
-        if correction.isPerfect {
-            return "checkmark"
-        } else if correction.errors.count <= 2 {
-            return "exclamationmark"
-        } else {
-            return "xmark"
+    private var scoreColor: Color {
+        switch correction.score {
+        case 90...100:
+            return .green
+        case 70..<90:
+            return .orange
+        default:
+            return .red
         }
     }
 
     private var statusColor: Color {
-        if correction.isPerfect {
-            return .green
-        } else if correction.errors.count <= 2 {
-            return .orange
-        } else {
-            return .red
-        }
+        scoreColor
     }
 
     private var timeAgo: String {

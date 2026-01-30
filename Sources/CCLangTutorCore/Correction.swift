@@ -22,6 +22,8 @@ struct Correction: Codable, Identifiable {
     let corrected: String
     let errors: [CorrectionError]
     let isPerfect: Bool
+    let score: Int
+    let advice: String?
     var chatMessages: [ChatMessage]
 
     init(
@@ -32,6 +34,8 @@ struct Correction: Codable, Identifiable {
         corrected: String,
         errors: [CorrectionError],
         isPerfect: Bool,
+        score: Int = 100,
+        advice: String? = nil,
         chatMessages: [ChatMessage] = []
     ) {
         self.id = id
@@ -41,11 +45,13 @@ struct Correction: Codable, Identifiable {
         self.corrected = corrected
         self.errors = errors
         self.isPerfect = isPerfect
+        self.score = score
+        self.advice = advice
         self.chatMessages = chatMessages
     }
 
     /// Create from a pending prompt after correction
-    init(from pending: PendingPrompt, corrected: String, errors: [CorrectionError]) {
+    init(from pending: PendingPrompt, corrected: String, errors: [CorrectionError], score: Int, advice: String?) {
         self.id = pending.id
         self.timestamp = pending.timestamp
         self.sessionId = pending.sessionId
@@ -53,13 +59,15 @@ struct Correction: Codable, Identifiable {
         self.corrected = corrected
         self.errors = errors
         self.isPerfect = errors.isEmpty
+        self.score = score
+        self.advice = advice
         self.chatMessages = []
     }
 
     // MARK: - Codable (backward compatibility)
 
     enum CodingKeys: String, CodingKey {
-        case id, timestamp, sessionId, original, corrected, errors, isPerfect, chatMessages
+        case id, timestamp, sessionId, original, corrected, errors, isPerfect, score, advice, chatMessages
     }
 
     init(from decoder: Decoder) throws {
@@ -71,6 +79,8 @@ struct Correction: Codable, Identifiable {
         corrected = try container.decode(String.self, forKey: .corrected)
         errors = try container.decode([CorrectionError].self, forKey: .errors)
         isPerfect = try container.decode(Bool.self, forKey: .isPerfect)
+        score = try container.decodeIfPresent(Int.self, forKey: .score) ?? (isPerfect ? 100 : 70)
+        advice = try container.decodeIfPresent(String.self, forKey: .advice)
         chatMessages = try container.decodeIfPresent([ChatMessage].self, forKey: .chatMessages) ?? []
     }
 }

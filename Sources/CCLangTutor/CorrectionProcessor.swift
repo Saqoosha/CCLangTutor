@@ -46,7 +46,9 @@ actor CorrectionProcessor {
                         corrected: "Set API key in Settings",
                         explanation: "Open Settings (⌘,) and enter your \(provider.displayName) API key."
                     )
-                ]
+                ],
+                score: 0,
+                advice: "Configure your API key in Settings to enable corrections."
             )
         }
 
@@ -214,13 +216,19 @@ actor CorrectionProcessor {
               "explanation": "brief explanation of why this is wrong"
             }
           ],
-          "isPerfect": true/false (true if no errors found)
+          "isPerfect": true/false (true if no errors found),
+          "score": 0-100 (overall English quality score),
+          "advice": "Brief advice on how to improve (only if score < 100)"
         }
 
         IMPORTANT:
-        - If the text is already perfect, return isPerfect: true with an empty errors array.
+        - If the text is already perfect, return isPerfect: true with an empty errors array, score: 100, and advice: null.
         - Only include items in errors where original != corrected (actual changes).
         - Do NOT add entries where original and corrected are the same.
+        - In each error entry, "original" must be the EXACT text from the user's input, and "corrected" must be your fix.
+        - Example: if user wrote "an advice", error should be {"original": "an advice", "corrected": "advice", ...}
+        - Score should reflect overall English quality: 100 = perfect, 80-99 = minor issues, 60-79 = noticeable errors, below 60 = significant problems.
+        - If score < 100, provide brief, actionable advice explaining what would make it perfect (e.g., capitalization, punctuation, word choice, sentence structure).
         """
     }
 
@@ -253,10 +261,14 @@ actor CorrectionProcessor {
                 )
             }
 
+        let score = result.score ?? (errors.isEmpty ? 100 : 70)
+
         return Correction(
             from: prompt,
             corrected: result.corrected,
-            errors: errors
+            errors: errors,
+            score: score,
+            advice: result.advice
         )
     }
 
@@ -312,6 +324,8 @@ struct CorrectionResult: Decodable {
     let corrected: String
     let errors: [ErrorItem]
     let isPerfect: Bool
+    let score: Int?
+    let advice: String?
 }
 
 struct ErrorItem: Decodable {

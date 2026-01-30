@@ -87,6 +87,8 @@ actor ChatProcessor {
 
         ## Instructions
         - Answer questions about these corrections helpfully
+        - When the user refers to something they wrote (e.g., "I used...", "my original...", "why did I..."), look at the Original text above and reference it specifically
+        - Acknowledge what the user actually wrote before explaining
         - Provide examples when useful
         - Keep responses concise but thorough
         """

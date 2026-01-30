@@ -14,6 +14,11 @@ struct CorrectionDetailView: View {
                         headerSection
                             .id("top")
 
+                        // Advice section (when score < 100)
+                        if let advice = correction.advice, correction.score < 100 {
+                            adviceSection(advice)
+                        }
+
                         // Main diff view
                         diffSection
 
@@ -72,8 +77,8 @@ struct CorrectionDetailView: View {
                     .fill(statusGradient)
                     .frame(width: 56, height: 56)
 
-                Image(systemName: statusIcon)
-                    .font(.system(size: 24, weight: .semibold))
+                Text("\(correction.score)")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             }
 
@@ -88,6 +93,31 @@ struct CorrectionDetailView: View {
 
             Spacer()
         }
+    }
+
+    // MARK: - Advice Section
+
+    private func adviceSection(_ advice: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "sparkles")
+                .font(.title3)
+                .foregroundStyle(.purple)
+
+            Text(advice)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.purple.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(.purple.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Diff Section
@@ -196,36 +226,39 @@ struct CorrectionDetailView: View {
     // MARK: - Helpers
 
     private var statusGradient: LinearGradient {
-        if correction.isPerfect {
+        switch correction.score {
+        case 90...100:
             return LinearGradient(colors: [.green, .green.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
-        } else if correction.errors.count <= 2 {
+        case 70..<90:
             return LinearGradient(colors: [.orange, .orange.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
-        } else {
+        default:
             return LinearGradient(colors: [.red, .red.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
 
-    private var statusIcon: String {
-        correction.isPerfect ? "checkmark" : "pencil"
-    }
-
     private var statusTitle: String {
-        if correction.isPerfect {
+        switch correction.score {
+        case 100:
             return "Perfect!"
-        } else {
-            return "\(correction.errors.count) Correction\(correction.errors.count == 1 ? "" : "s")"
+        case 90..<100:
+            return "Excellent"
+        case 80..<90:
+            return "Great"
+        case 70..<80:
+            return "Good"
+        case 60..<70:
+            return "Fair"
+        default:
+            return "Needs Work"
         }
     }
 
     private var statusSubtitle: String {
         if correction.isPerfect {
             return "Your English is flawless"
-        } else if correction.errors.count == 1 {
-            return "Just a small fix needed"
-        } else if correction.errors.count <= 3 {
-            return "A few things to improve"
         } else {
-            return "Several areas to work on"
+            let count = correction.errors.count
+            return "\(count) correction\(count == 1 ? "" : "s") suggested"
         }
     }
 
@@ -302,6 +335,7 @@ struct ErrorCardView: View {
                 explanation: "Language names should be capitalized"
             )
         ],
-        isPerfect: false
+        isPerfect: false,
+        score: 75
     ))
 }
