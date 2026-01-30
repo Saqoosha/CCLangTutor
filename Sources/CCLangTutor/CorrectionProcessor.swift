@@ -98,12 +98,25 @@ actor CorrectionProcessor {
     private func getSystemPrompt() -> String {
         let basePrompt = UserDefaults.standard.string(forKey: "systemPrompt") ?? SettingsView.defaultSystemPrompt
         let language = ResponseLanguage.current
+        let ignoredRules = StorageManager.shared.loadIgnoredRules()
 
-        if language == .english {
-            return basePrompt
+        var fullPrompt = basePrompt
+
+        if !ignoredRules.isEmpty {
+            let rulesList = ignoredRules.map { "- \($0.rule)" }.joined(separator: "\n")
+            fullPrompt += """
+
+
+            IMPORTANT: Do NOT flag the following types of corrections (the user has chosen to ignore these):
+            \(rulesList)
+            """
         }
 
-        return basePrompt + "\n\nIMPORTANT: Write all explanations in \(language.languageName)."
+        if language != .english {
+            fullPrompt += "\n\nIMPORTANT: Write all explanations in \(language.languageName)."
+        }
+
+        return fullPrompt
     }
 
     private func getAPIKey(for provider: AIProvider) -> String? {
@@ -112,7 +125,7 @@ actor CorrectionProcessor {
 
     // MARK: - Claude API
 
-    private func callClaudeAPI(prompt: String, apiKey: String, systemPrompt: String, model: String) async throws -> String {
+    private func callClaudeAPI(prompt: String, apiKey: String, systemPrompt: String, model: String, includeResponseFormat: Bool = true) async throws -> String {
         guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
             throw APIError.invalidURL
         }
@@ -122,7 +135,7 @@ actor CorrectionProcessor {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
-        let fullSystemPrompt = systemPrompt + "\n\n" + responseFormatPrompt
+        let fullSystemPrompt = includeResponseFormat ? systemPrompt + "\n\n" + responseFormatPrompt : systemPrompt
 
         let body: [String: Any] = [
             "model": model,
@@ -151,7 +164,7 @@ actor CorrectionProcessor {
 
     // MARK: - Gemini API
 
-    private func callGeminiAPI(prompt: String, apiKey: String, systemPrompt: String, model: String) async throws -> String {
+    private func callGeminiAPI(prompt: String, apiKey: String, systemPrompt: String, model: String, includeResponseFormat: Bool = true) async throws -> String {
         guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)") else {
             throw APIError.invalidURL
         }
@@ -159,7 +172,7 @@ actor CorrectionProcessor {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let fullSystemPrompt = systemPrompt + "\n\n" + responseFormatPrompt
+        let fullSystemPrompt = includeResponseFormat ? systemPrompt + "\n\n" + responseFormatPrompt : systemPrompt
 
         let body: [String: Any] = [
             "system_instruction": ["parts": [["text": fullSystemPrompt]]],
@@ -186,7 +199,7 @@ actor CorrectionProcessor {
 
     // MARK: - OpenAI API
 
-    private func callOpenAIAPI(prompt: String, apiKey: String, systemPrompt: String, model: String) async throws -> String {
+    private func callOpenAIAPI(prompt: String, apiKey: String, systemPrompt: String, model: String, includeResponseFormat: Bool = true) async throws -> String {
         guard let url = URL(string: "https://api.openai.com/v1/chat/completions") else {
             throw APIError.invalidURL
         }
@@ -195,7 +208,7 @@ actor CorrectionProcessor {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-        let fullSystemPrompt = systemPrompt + "\n\n" + responseFormatPrompt
+        let fullSystemPrompt = includeResponseFormat ? systemPrompt + "\n\n" + responseFormatPrompt : systemPrompt
 
         let body: [String: Any] = [
             "model": model,
@@ -306,6 +319,74 @@ actor CorrectionProcessor {
             return true // Default to English if undetermined
         }
         return language == .english
+    }
+
+    // MARK: - Rule Generalization
+
+    private var ruleGeneralizationPrompt: String {
+        """
+        Respond in JSON format only:
+        {"rule": "Category name here"}
+
+        Create a category name (2-4 words) for this grammar correction.
+
+        For capitalization issues, distinguish between:
+        - "Sentence capitalization" (first word of sentence)
+        - "Proper noun capitalization" (names, places, brands, OS names like Linux/Windows)
+        - "Pronoun I capitalization" (the word "I")
+        - "Acronym capitalization" (fps→FPS, cpu→CPU)
+
+        Other categories: "Punctuation", "Article usage", "Verb tense", "Subject-verb agreement", "Spelling", "Word order", "Preposition choice", etc.
+
+        IMPORTANT:
+        - If an existing rule covers the EXACT same type of correction, return that EXACT rule name.
+        - Only match existing rules if they are truly the same type.
+        """
+    }
+
+    func generalizeRule(explanation: String, existingRules: [String]) async throws -> String {
+        let provider = await getProvider()
+        let apiKey = getAPIKey(for: provider)
+
+        guard let apiKey = apiKey, !apiKey.isEmpty else {
+            throw APIError.noAPIKey
+        }
+
+        let existingRulesText = existingRules.isEmpty ? "None" : existingRules.map { "\"\($0)\"" }.joined(separator: ", ")
+
+        let prompt = """
+        Existing ignored rules: [\(existingRulesText)]
+
+        Explanation: "\(explanation)"
+        """
+
+        let systemPrompt = ruleGeneralizationPrompt
+
+        let response: String
+        switch provider {
+        case .claudeAPI:
+            response = try await callClaudeAPI(prompt: prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel, includeResponseFormat: false)
+        case .gemini:
+            response = try await callGeminiAPI(prompt: prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel, includeResponseFormat: false)
+        case .openAI:
+            response = try await callOpenAIAPI(prompt: prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel, includeResponseFormat: false)
+        }
+
+        return try parseRuleResponse(response)
+    }
+
+    private func parseRuleResponse(_ text: String) throws -> String {
+        guard let jsonString = extractJSON(from: text),
+              let jsonData = jsonString.data(using: .utf8) else {
+            throw APIError.parseError("No JSON found in rule response")
+        }
+
+        struct RuleResponse: Decodable {
+            let rule: String
+        }
+
+        let result = try JSONDecoder().decode(RuleResponse.self, from: jsonData)
+        return result.rule
     }
 }
 

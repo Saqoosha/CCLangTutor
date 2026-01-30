@@ -68,6 +68,25 @@ struct CorrectionDetailView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .navigationTitle(formattedDate)
+        .overlay(alignment: .bottom) {
+            if let message = viewModel.ignoredRuleAddedMessage {
+                Text(message)
+                    .font(.callout)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    .padding(.bottom, 80)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation {
+                                viewModel.ignoredRuleAddedMessage = nil
+                            }
+                        }
+                    }
+            }
+        }
+        .animation(.easeInOut, value: viewModel.ignoredRuleAddedMessage)
     }
 
     private func sendMessage() {
@@ -226,7 +245,12 @@ struct CorrectionDetailView: View {
 
             VStack(spacing: 12) {
                 ForEach(Array(correction.errors.enumerated()), id: \.element.id) { index, error in
-                    ErrorCardView(error: error, index: index + 1)
+                    ErrorCardView(
+                        error: error,
+                        index: index + 1,
+                        isAddingIgnoredRule: viewModel.isAddingIgnoredRule,
+                        onIgnoreRule: { viewModel.ignoreRule(error) }
+                    )
                 }
             }
         }
@@ -282,6 +306,8 @@ struct CorrectionDetailView: View {
 struct ErrorCardView: View {
     let error: CorrectionError
     let index: Int
+    var isAddingIgnoredRule: Bool = false
+    var onIgnoreRule: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -318,6 +344,27 @@ struct ErrorCardView: View {
             }
 
             Spacer(minLength: 0)
+
+            // Ignore rule button
+            if let onIgnoreRule = onIgnoreRule {
+                Button {
+                    onIgnoreRule()
+                } label: {
+                    if isAddingIgnoredRule {
+                        ProgressView()
+                            .controlSize(.small)
+                            .frame(width: 16, height: 16)
+                    } else {
+                        Text("Ignore")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.borderless)
+                .disabled(isAddingIgnoredRule)
+                .focusable(false)
+                .help("Don't show this type of correction again")
+            }
         }
         .padding(16)
         .background(

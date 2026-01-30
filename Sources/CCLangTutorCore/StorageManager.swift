@@ -22,6 +22,10 @@ final class StorageManager {
         appSupportURL.appendingPathComponent("corrections.json")
     }
 
+    var ignoredRulesURL: URL {
+        appSupportURL.appendingPathComponent("ignoredRules.json")
+    }
+
     private init() {
         encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -103,5 +107,33 @@ final class StorageManager {
             corrections[index] = correction
             try saveCorrections(corrections)
         }
+    }
+
+    // MARK: - Ignored Rules
+
+    func loadIgnoredRules() -> [IgnoredRule] {
+        guard let data = try? Data(contentsOf: ignoredRulesURL),
+              let store = try? decoder.decode(IgnoredRulesStore.self, from: data) else {
+            return []
+        }
+        return store.rules
+    }
+
+    func saveIgnoredRules(_ rules: [IgnoredRule]) throws {
+        let store = IgnoredRulesStore(rules: rules)
+        let data = try encoder.encode(store)
+        try data.write(to: ignoredRulesURL, options: .atomic)
+    }
+
+    func addIgnoredRule(_ rule: IgnoredRule) throws {
+        var rules = loadIgnoredRules()
+        rules.append(rule)
+        try saveIgnoredRules(rules)
+    }
+
+    func removeIgnoredRule(id: UUID) throws {
+        var rules = loadIgnoredRules()
+        rules.removeAll { $0.id == id }
+        try saveIgnoredRules(rules)
     }
 }

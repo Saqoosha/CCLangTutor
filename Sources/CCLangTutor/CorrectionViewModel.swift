@@ -10,6 +10,8 @@ final class CorrectionViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var selectedCorrectionId: UUID?
     @Published var isSendingChat = false
+    @Published var isAddingIgnoredRule = false
+    @Published var ignoredRuleAddedMessage: String?
 
     private let storage = StorageManager.shared
     private let processor = CorrectionProcessor()
@@ -198,5 +200,62 @@ final class CorrectionViewModel: ObservableObject {
 
         corrections[index].chatMessages.append(message)
         try? storage.updateCorrection(corrections[index])
+    }
+
+    // MARK: - Ignored Rules
+
+    func ignoreRule(_ error: CorrectionError) {
+        guard !isAddingIgnoredRule else { return }
+
+        isAddingIgnoredRule = true
+        ignoredRuleAddedMessage = nil
+
+        Task { @MainActor in
+            defer { self.isAddingIgnoredRule = false }
+
+            do {
+                let existingRules = storage.loadIgnoredRules()
+                let existingRuleNames = existingRules.map { $0.rule }
+
+                let ruleName = try await processor.generalizeRule(
+                    explanation: error.explanation,
+                    existingRules: existingRuleNames
+                )
+
+                // Check if rule already exists
+                if existingRuleNames.contains(ruleName) {
+                    logger.info("Rule already exists: \(ruleName)")
+                    self.ignoredRuleAddedMessage = "Rule already exists: \(ruleName)"
+                    return
+                }
+
+                let example = "\(error.original) → \(error.corrected)"
+                let ignoredRule = IgnoredRule(
+                    rule: ruleName,
+                    originalExplanation: error.explanation,
+                    example: example
+                )
+
+                try storage.addIgnoredRule(ignoredRule)
+                logger.info("Added ignored rule: \(ruleName)")
+                self.ignoredRuleAddedMessage = "Added: \(ruleName)"
+            } catch {
+                logger.error("Failed to add ignored rule: \(error.localizedDescription)")
+                self.ignoredRuleAddedMessage = "Error: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    func getIgnoredRules() -> [IgnoredRule] {
+        storage.loadIgnoredRules()
+    }
+
+    func removeIgnoredRule(id: UUID) {
+        do {
+            try storage.removeIgnoredRule(id: id)
+            logger.info("Removed ignored rule: \(id)")
+        } catch {
+            logger.error("Failed to remove ignored rule: \(error.localizedDescription)")
+        }
     }
 }

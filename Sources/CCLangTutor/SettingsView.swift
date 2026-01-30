@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var openAIAPIKey = ""
     @State private var showingSaveConfirmation = false
     @State private var saveConfirmationMessage = ""
+    @State private var showingIgnoredRules = false
+    @State private var ignoredRulesCount = 0
 
     static let defaultSystemPrompt = """
     You are a friendly English tutor for a developer using CLI tools. When correcting:
@@ -85,6 +87,33 @@ struct SettingsView: View {
             } header: {
                 Text("Tutor Personality")
             }
+
+            Section {
+                Button {
+                    showingIgnoredRules = true
+                } label: {
+                    HStack {
+                        Text("Ignored Rules")
+                        Spacer()
+                        if ignoredRulesCount > 0 {
+                            Text("\(ignoredRulesCount)")
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(.secondary))
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            } header: {
+                Text("Correction Filters")
+            } footer: {
+                Text("Manage rules for corrections you don't want to see")
+            }
         }
         .formStyle(.grouped)
         .scrollDisabled(true)
@@ -97,6 +126,15 @@ struct SettingsView: View {
         }
         .onAppear {
             loadAPIKeys()
+            loadIgnoredRulesCount()
+        }
+        .sheet(isPresented: $showingIgnoredRules) {
+            IgnoredRulesView()
+        }
+        .onChange(of: showingIgnoredRules) {
+            if !showingIgnoredRules {
+                loadIgnoredRulesCount()
+            }
         }
     }
 
@@ -128,6 +166,10 @@ struct SettingsView: View {
             saveConfirmationMessage = "Failed to save: \(error.localizedDescription)"
         }
         showingSaveConfirmation = true
+    }
+
+    private func loadIgnoredRulesCount() {
+        ignoredRulesCount = StorageManager.shared.loadIgnoredRules().count
     }
 }
 
