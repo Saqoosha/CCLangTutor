@@ -92,65 +92,84 @@ struct CorrectionDetailView: View {
 
     // MARK: - Diff Section
 
+    @ViewBuilder
     private var diffSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Original
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 6) {
-                    Image(systemName: "minus.circle.fill")
-                        .foregroundStyle(.red.opacity(0.8))
-                    Text("Original")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+        if correction.isPerfect {
+            // Perfect: show original text only (no comparison needed)
+            Text(correction.original)
+                .font(.title3)
+                .textSelection(.enabled)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.green.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(.green.opacity(0.2), lineWidth: 1)
+                        )
+                )
+        } else {
+            // Has corrections: show before/after comparison
+            VStack(alignment: .leading, spacing: 16) {
+                // Original
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "minus.circle.fill")
+                            .foregroundStyle(.red.opacity(0.8))
+                        Text("Original")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(correction.original)
+                        .font(.title3)
+                        .textSelection(.enabled)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.red.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(.red.opacity(0.2), lineWidth: 1)
+                                )
+                        )
                 }
 
-                Text(correction.original)
-                    .font(.title3)
-                    .textSelection(.enabled)
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.red.opacity(0.08))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(.red.opacity(0.2), lineWidth: 1)
-                            )
-                    )
-            }
-
-            // Arrow
-            HStack {
-                Spacer()
-                Image(systemName: "arrow.down")
-                    .font(.title2.weight(.medium))
-                    .foregroundStyle(.secondary.opacity(0.5))
-                Spacer()
-            }
-
-            // Corrected
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(.green.opacity(0.8))
-                    Text("Corrected")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                // Arrow
+                HStack {
+                    Spacer()
+                    Image(systemName: "arrow.down")
+                        .font(.title2.weight(.medium))
+                        .foregroundStyle(.secondary.opacity(0.5))
+                    Spacer()
                 }
 
-                Text(correction.corrected)
-                    .font(.title3)
-                    .textSelection(.enabled)
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.green.opacity(0.08))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(.green.opacity(0.2), lineWidth: 1)
-                            )
-                    )
+                // Corrected
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(.green.opacity(0.8))
+                        Text("Corrected")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(correction.corrected)
+                        .font(.title3)
+                        .textSelection(.enabled)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.green.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(.green.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                }
             }
         }
     }
