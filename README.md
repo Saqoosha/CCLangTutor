@@ -8,11 +8,22 @@ English | [日本語](README.ja.md)
   A macOS app that automatically corrects English grammar in your Claude Code prompts.
 </p>
 
+## Features
+
+- **Real-time Grammar Correction** - Automatically analyzes your prompts as you use Claude Code
+- **0-100 Scoring System** - Get a score for each prompt with color-coded feedback (green/yellow/red)
+- **Detailed Explanations** - See what's wrong and why, with specific corrections for each error
+- **Improvement Advice** - Receive suggestions on how to write better English
+- **Interactive Chat** - Ask follow-up questions about any correction to learn more
+- **Multi-Provider Support** - Choose between Claude, Gemini, or OpenAI as your AI backend
+- **7 Response Languages** - Get explanations in English, Japanese, Spanish, French, German, Chinese, or Korean
+- **Automatic Hook Setup** - One-click installation of Claude Code hooks
+
 ## Installation
 
 1. Download the latest `.dmg` from [Releases](https://github.com/Saqoosha/CCLangTutor/releases)
 2. Open the DMG and drag `CCLangTutor.app` to Applications
-3. Run the app once to register the hook
+3. Launch the app and click "Install Hooks" when prompted
 
 ## Configuration
 
@@ -20,8 +31,9 @@ English | [日本語](README.ja.md)
 
 1. Open CCLangTutor.app
 2. Go to Settings (⌘,)
-3. Enter your API key for your preferred provider (Claude, Gemini, or OpenAI)
-4. Click "Save"
+3. Select your preferred AI provider (Claude, Gemini, or OpenAI)
+4. Enter your API key
+5. Click "Save"
 
 The API key is stored securely in macOS Keychain.
 
@@ -39,9 +51,9 @@ You can choose the language for correction explanations and chat responses:
 
 Note: The target language for corrections is always English. This setting only affects the language of explanations.
 
-### Claude Code Hook
+### Manual Hook Setup
 
-Add the following to your Claude Code settings (`~/.claude/settings.json`):
+If you prefer to configure hooks manually, add the following to `~/.claude/settings.json`:
 
 ```json
 {
@@ -65,7 +77,16 @@ Add the following to your Claude Code settings (`~/.claude/settings.json`):
 1. Launch CCLangTutor.app (it runs in the background)
 2. Use Claude Code as normal
 3. Your prompts will be automatically analyzed and corrections displayed in the app
-4. Click on any correction to see details and ask follow-up questions
+4. Click on any correction to see details
+5. Use the chat to ask follow-up questions about the correction
+
+### Scoring System
+
+| Score | Color | Meaning |
+|-------|-------|---------|
+| 90-100 | 🟢 Green | Excellent - minor or no issues |
+| 70-89 | 🟡 Yellow | Good - some improvements needed |
+| 0-69 | 🔴 Red | Needs work - significant issues |
 
 ### Slash Commands
 
@@ -105,7 +126,7 @@ User prompt → Claude Code Hook (UserPromptSubmit)
                     ↓
             CCLangTutor.app (processes)
                     ↓
-            Claude API (Haiku) → corrections.json
+            AI API → corrections.json
                     ↓
             SwiftUI displays results
 ```
