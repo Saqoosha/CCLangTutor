@@ -248,7 +248,7 @@ struct CorrectionDetailView: View {
                     ErrorCardView(
                         error: error,
                         index: index + 1,
-                        isAddingIgnoredRule: viewModel.isAddingIgnoredRule,
+                        isAddingIgnoredRule: viewModel.addingIgnoredRuleIds.contains(error.id),
                         onIgnoreRule: { viewModel.ignoreRule(error) }
                     )
                 }

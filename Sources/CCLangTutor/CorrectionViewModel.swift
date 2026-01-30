@@ -10,10 +10,12 @@ final class CorrectionViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var selectedCorrectionId: UUID?
     @Published var isSendingChat = false
-    @Published var isAddingIgnoredRule = false
+    @Published var addingIgnoredRuleIds: Set<UUID> = []
     @Published var ignoredRuleAddedMessage: String?
 
     private let storage = StorageManager.shared
+    private var ignoredRuleQueue: [CorrectionError] = []
+    private var isProcessingIgnoredRuleQueue = false
     private let processor = CorrectionProcessor()
     private let chatProcessor = ChatProcessor()
     nonisolated(unsafe) private var notificationObserver: Any?
@@ -205,44 +207,57 @@ final class CorrectionViewModel: ObservableObject {
     // MARK: - Ignored Rules
 
     func ignoreRule(_ error: CorrectionError) {
-        guard !isAddingIgnoredRule else { return }
+        // Skip if already in queue or processing
+        guard !addingIgnoredRuleIds.contains(error.id) else { return }
 
-        isAddingIgnoredRule = true
-        ignoredRuleAddedMessage = nil
+        addingIgnoredRuleIds.insert(error.id)
+        ignoredRuleQueue.append(error)
+        processIgnoredRuleQueue()
+    }
+
+    private func processIgnoredRuleQueue() {
+        guard !isProcessingIgnoredRuleQueue, !ignoredRuleQueue.isEmpty else { return }
+
+        isProcessingIgnoredRuleQueue = true
 
         Task { @MainActor in
-            defer { self.isAddingIgnoredRule = false }
+            while !self.ignoredRuleQueue.isEmpty {
+                let error = self.ignoredRuleQueue.removeFirst()
 
-            do {
-                let existingRules = storage.loadIgnoredRules()
-                let existingRuleNames = existingRules.map { $0.rule }
+                do {
+                    let existingRules = storage.loadIgnoredRules()
+                    let existingRuleNames = existingRules.map { $0.rule }
 
-                let ruleName = try await processor.generalizeRule(
-                    explanation: error.explanation,
-                    existingRules: existingRuleNames
-                )
+                    let ruleName = try await processor.generalizeRule(
+                        explanation: error.explanation,
+                        existingRules: existingRuleNames
+                    )
 
-                // Check if rule already exists
-                if existingRuleNames.contains(ruleName) {
-                    logger.info("Rule already exists: \(ruleName)")
-                    self.ignoredRuleAddedMessage = "Rule already exists: \(ruleName)"
-                    return
+                    // Check if rule already exists
+                    if existingRuleNames.contains(ruleName) {
+                        logger.info("Rule already exists: \(ruleName)")
+                        self.ignoredRuleAddedMessage = "Rule already exists: \(ruleName)"
+                    } else {
+                        let example = "\(error.original) → \(error.corrected)"
+                        let ignoredRule = IgnoredRule(
+                            rule: ruleName,
+                            originalExplanation: error.explanation,
+                            example: example
+                        )
+
+                        try storage.addIgnoredRule(ignoredRule)
+                        logger.info("Added ignored rule: \(ruleName)")
+                        self.ignoredRuleAddedMessage = "Added: \(ruleName)"
+                    }
+                } catch {
+                    logger.error("Failed to add ignored rule: \(error.localizedDescription)")
+                    self.ignoredRuleAddedMessage = "Error: \(error.localizedDescription)"
                 }
 
-                let example = "\(error.original) → \(error.corrected)"
-                let ignoredRule = IgnoredRule(
-                    rule: ruleName,
-                    originalExplanation: error.explanation,
-                    example: example
-                )
-
-                try storage.addIgnoredRule(ignoredRule)
-                logger.info("Added ignored rule: \(ruleName)")
-                self.ignoredRuleAddedMessage = "Added: \(ruleName)"
-            } catch {
-                logger.error("Failed to add ignored rule: \(error.localizedDescription)")
-                self.ignoredRuleAddedMessage = "Error: \(error.localizedDescription)"
+                self.addingIgnoredRuleIds.remove(error.id)
             }
+
+            self.isProcessingIgnoredRuleQueue = false
         }
     }
 
