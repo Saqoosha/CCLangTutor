@@ -4,6 +4,11 @@ import os
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "sh.saqoo.cclangtutor", category: "Processor")
 
+private enum ScoreDefaults {
+    static let perfect = 100
+    static let fallback = 70
+}
+
 enum APIError: LocalizedError {
     case noAPIKey
     case invalidURL
@@ -261,7 +266,7 @@ actor CorrectionProcessor {
                 )
             }
 
-        let score = result.score ?? (errors.isEmpty ? 100 : 70)
+        let score = result.score ?? (errors.isEmpty ? ScoreDefaults.perfect : ScoreDefaults.fallback)
 
         return Correction(
             from: prompt,

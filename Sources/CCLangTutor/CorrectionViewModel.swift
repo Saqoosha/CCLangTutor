@@ -16,6 +16,9 @@ final class CorrectionViewModel: ObservableObject {
     private let chatProcessor = ChatProcessor()
     nonisolated(unsafe) private var notificationObserver: Any?
 
+    /// Cached set of original texts that have already been corrected (for deduplication)
+    private var correctedOriginalsCache: Set<String> = []
+
     init() {
         logger.info("ViewModel init")
         loadData()
@@ -48,10 +51,10 @@ final class CorrectionViewModel: ObservableObject {
         corrections = storage.loadCorrections()
         let allPending = storage.loadPendingPrompts()
 
-        // Filter out prompts that have already been corrected
-        let correctedOriginals = Set(corrections.map { $0.original })
+        // Update cache of corrected originals for deduplication
+        correctedOriginalsCache = Set(corrections.map { $0.original })
         let (alreadyCorrected, newPending) = allPending.reduce(into: ([PendingPrompt](), [PendingPrompt]())) { result, prompt in
-            if correctedOriginals.contains(prompt.prompt) {
+            if correctedOriginalsCache.contains(prompt.prompt) {
                 result.0.append(prompt)
             } else {
                 result.1.append(prompt)
@@ -96,12 +99,9 @@ final class CorrectionViewModel: ObservableObject {
                 }
             }
 
-            // Build a set of already-corrected prompts for fast lookup
-            let correctedOriginals = Set(self.corrections.map { $0.original })
-
             for prompt in promptsToProcess {
                 // Skip if this exact prompt was already corrected before
-                if correctedOriginals.contains(prompt.prompt) {
+                if self.correctedOriginalsCache.contains(prompt.prompt) {
                     logger.info("Skipping already corrected prompt: \(prompt.prompt.prefix(50))...")
                     try? storage.removePendingPrompt(id: prompt.id)
                     self.pendingPrompts.removeAll { $0.id == prompt.id }
@@ -116,6 +116,7 @@ final class CorrectionViewModel: ObservableObject {
                     try storage.removePendingPrompt(id: prompt.id)
 
                     self.corrections.insert(correction, at: 0)
+                    self.correctedOriginalsCache.insert(correction.original)
                     self.pendingPrompts.removeAll { $0.id == prompt.id }
                     self.selectedCorrectionId = correction.id
                     logger.info("Correction saved and UI updated")
@@ -131,12 +132,14 @@ final class CorrectionViewModel: ObservableObject {
 
     func deleteCorrection(_ correction: Correction) {
         corrections.removeAll { $0.id == correction.id }
+        correctedOriginalsCache.remove(correction.original)
         try? storage.saveCorrections(corrections)
         logger.info("Deleted correction: \(correction.id)")
     }
 
     func clearAllCorrections() {
         corrections.removeAll()
+        correctedOriginalsCache.removeAll()
         try? storage.saveCorrections(corrections)
         logger.info("Cleared all corrections")
     }

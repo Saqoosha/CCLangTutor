@@ -1,5 +1,9 @@
 import SwiftUI
 
+private enum ChatStyle {
+    static let assistantBubbleOpacity = 0.08
+}
+
 struct ChatMessageView: View {
     let message: ChatMessage
 
@@ -44,7 +48,7 @@ struct ChatMessageView: View {
         if message.role == .user {
             return AnyShapeStyle(Color.accentColor)
         } else {
-            return AnyShapeStyle(Color.secondary.opacity(0.08))
+            return AnyShapeStyle(Color.secondary.opacity(ChatStyle.assistantBubbleOpacity))
         }
     }
 
