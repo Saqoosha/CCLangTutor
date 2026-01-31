@@ -9,9 +9,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func checkHookSetup() {
-        guard !UserDefaults.standard.bool(forKey: Self.dontAskHookSetupKey) else { return }
         guard HookManager.isClaudeCodeInstalled() else { return }
+
+        // Check if hook needs update (exists but wrong path)
+        if HookManager.needsHookUpdate() {
+            promptHookUpdate()
+            return
+        }
+
+        // Already correctly configured
         guard !HookManager.isHookConfigured() else { return }
+
+        // Check for initial setup
+        guard !UserDefaults.standard.bool(forKey: Self.dontAskHookSetupKey) else { return }
 
         // Initial setup uses 3-button alert (Install/Later/Don't Ask Again)
         let alert = NSAlert()
@@ -35,6 +45,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(true, forKey: Self.dontAskHookSetupKey)
         default:
             break
+        }
+    }
+
+    private func promptHookUpdate() {
+        let alert = NSAlert()
+        alert.messageText = "Update Claude Code Hook?"
+        alert.informativeText =
+            "The CCLangTutor hook path has changed. Would you like to update it to use the current app location?"
+        alert.addButton(withTitle: "Update")
+        alert.addButton(withTitle: "Later")
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            do {
+                try HookManager.cleanupAndInstallHook()
+                NotificationCenter.default.post(name: .hookConfigurationChanged, object: nil)
+                let successAlert = NSAlert()
+                successAlert.messageText = "Hook Updated"
+                successAlert.informativeText = "Claude Code hook has been updated to use the current app location."
+                successAlert.alertStyle = .informational
+                successAlert.addButton(withTitle: "OK")
+                successAlert.runModal()
+            } catch {
+                HookManager.showError(error)
+            }
         }
     }
 
