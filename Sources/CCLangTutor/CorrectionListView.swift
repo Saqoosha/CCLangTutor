@@ -13,7 +13,7 @@ struct CorrectionListView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            List {
+            List(selection: $viewModel.selectedCorrectionId) {
                 if !viewModel.pendingPrompts.isEmpty {
                     Section {
                         ForEach(viewModel.pendingPrompts) { prompt in
@@ -30,19 +30,16 @@ struct CorrectionListView: View {
                 Section {
                     ForEach(filteredCorrections) { correction in
                         let isSelected = viewModel.selectedCorrectionId == correction.id
-                        CorrectionRowView(
-                            correction: correction,
-                            isSelected: isSelected
-                        )
-                        .id(correction.id)
-                        .listRowBackground(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
-                                .padding(.horizontal, 4)
-                        )
-                        .onTapGesture {
-                            viewModel.selectedCorrectionId = correction.id
-                        }
+                        CorrectionRowView(correction: correction, isSelected: isSelected)
+                            .tag(correction.id)
+                            .id(correction.id)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    viewModel.deleteCorrection(correction)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
@@ -116,23 +113,21 @@ struct CorrectionRowView: View {
                     .lineLimit(2)
                     .font(.body)
 
-                HStack(spacing: 8) {
-                    if correction.isPerfect {
-                        Label("Perfect", systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                    } else {
-                        Label("\(correction.errors.count) issue\(correction.errors.count == 1 ? "" : "s")", systemImage: "pencil.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(statusColor)
-                    }
+                HStack(spacing: 4) {
+                    Image(systemName: correction.isPerfect ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(isSelected ? .white : (correction.isPerfect ? .green : statusColor))
+
+                    Text(correction.isPerfect ? "Perfect" : "\(correction.errors.count) issue\(correction.errors.count == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundStyle(isSelected ? .white : (correction.isPerfect ? .green : statusColor))
 
                     Text("·")
-                        .foregroundStyle(Color.secondary.opacity(0.5))
+                        .foregroundStyle(isSelected ? .white.opacity(0.6) : Color.secondary.opacity(0.5))
 
                     Text(timeAgo)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                 }
             }
         }
@@ -148,13 +143,14 @@ struct CorrectionRowView: View {
         } else {
             ZStack {
                 Circle()
-                    .fill(scoreColor.opacity(0.15))
+                    .fill(isSelected ? scoreColor : scoreColor.opacity(0.15))
                     .frame(width: 32, height: 32)
 
                 Text("\(correction.score)")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(scoreColor)
+                    .foregroundStyle(isSelected ? .white : scoreColor)
             }
+            .drawingGroup()
         }
     }
 
@@ -213,9 +209,9 @@ struct CorrectionRowView: View {
         switch correction.score {
         case 100:
             return Color(red: 0.85, green: 0.65, blue: 0.13) // Gold
-        case 90..<100:
+        case 95..<100:
             return .green
-        case 70..<90:
+        case 80..<95:
             return .orange
         default:
             return .red
