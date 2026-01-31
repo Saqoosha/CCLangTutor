@@ -3,6 +3,7 @@ import SwiftUI
 struct CorrectionListView: View {
     @EnvironmentObject var viewModel: CorrectionViewModel
     @AppStorage("hidePerfectScore") private var hidePerfectScore = false
+    @FocusState private var isListFocused: Bool
 
     private var filteredCorrections: [Correction] {
         if hidePerfectScore {
@@ -58,6 +59,12 @@ struct CorrectionListView: View {
                     proxy.scrollTo("listTop", anchor: .top)
                 }
             }
+            .focused($isListFocused)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isListFocused = true
+                }
+            }
         }
         .listStyle(.sidebar)
         .navigationTitle("CCLangTutor")
@@ -103,6 +110,11 @@ struct PendingRowView: View {
 struct CorrectionRowView: View {
     let correction: Correction
     var isSelected: Bool = false
+    @Environment(\.controlActiveState) private var controlActiveState
+
+    private var isActivelySelected: Bool {
+        isSelected && controlActiveState == .key
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -116,18 +128,18 @@ struct CorrectionRowView: View {
                 HStack(spacing: 4) {
                     Image(systemName: correction.isPerfect ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .font(.caption)
-                        .foregroundStyle(isSelected ? .white : (correction.isPerfect ? .green : statusColor))
+                        .foregroundStyle(isActivelySelected ? .white : (correction.isPerfect ? .green : statusColor))
 
                     Text(correction.isPerfect ? "Perfect" : "\(correction.errors.count) issue\(correction.errors.count == 1 ? "" : "s")")
                         .font(.caption)
-                        .foregroundStyle(isSelected ? .white : (correction.isPerfect ? .green : statusColor))
+                        .foregroundStyle(isActivelySelected ? .white : (correction.isPerfect ? .green : statusColor))
 
                     Text("·")
-                        .foregroundStyle(isSelected ? .white.opacity(0.6) : Color.secondary.opacity(0.5))
+                        .foregroundStyle(isActivelySelected ? .white.opacity(0.6) : Color.secondary.opacity(0.5))
 
                     Text(timeAgo)
                         .font(.caption)
-                        .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                        .foregroundStyle(isActivelySelected ? .white.opacity(0.8) : .secondary)
                 }
             }
         }
@@ -143,12 +155,12 @@ struct CorrectionRowView: View {
         } else {
             ZStack {
                 Circle()
-                    .fill(isSelected ? scoreColor : scoreColor.opacity(0.15))
+                    .fill(isActivelySelected ? scoreColor : scoreColor.opacity(0.15))
                     .frame(width: 32, height: 32)
 
                 Text("\(correction.score)")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(isSelected ? .white : scoreColor)
+                    .foregroundStyle(isActivelySelected ? .white : scoreColor)
             }
             .drawingGroup()
         }
