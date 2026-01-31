@@ -35,12 +35,17 @@ enum APIError: LocalizedError {
 
 actor CorrectionProcessor {
     func process(_ prompt: PendingPrompt) async throws -> Correction {
+        // Filter URLs and file paths if enabled
+        let filterEnabled = await getFilterEnabled()
+        let filteredText = filterEnabled ? PromptFilter.filter(prompt.prompt) : prompt.prompt
+
         // Skip non-English input
-        if !isEnglish(prompt.prompt) {
+        if !isEnglish(filteredText) {
             logger.info("Skipping non-English input")
             return Correction(
                 from: prompt,
-                corrected: prompt.prompt,
+                originalText: filteredText,
+                corrected: filteredText,
                 errors: [],
                 score: 100,
                 advice: nil,
@@ -52,13 +57,14 @@ actor CorrectionProcessor {
         let apiKey = getAPIKey(for: provider)
         let systemPrompt = await getSystemPrompt()
 
-        logger.info("Processing with provider: \(provider.displayName), hasAPIKey: \(apiKey != nil)")
+        logger.info("Processing with provider: \(provider.displayName), hasAPIKey: \(apiKey != nil), filterEnabled: \(filterEnabled)")
 
         guard let apiKey = apiKey, !apiKey.isEmpty else {
             logger.warning("No API key for \(provider.displayName)")
             return Correction(
                 from: prompt,
-                corrected: prompt.prompt,
+                originalText: filteredText,
+                corrected: filteredText,
                 errors: [
                     CorrectionError(
                         original: "API key missing",
@@ -75,15 +81,15 @@ actor CorrectionProcessor {
         logger.info("Calling \(provider.displayName) API with model: \(provider.defaultModel)")
         switch provider {
         case .claudeAPI:
-            response = try await callClaudeAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
+            response = try await callClaudeAPI(prompt: filteredText, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
         case .gemini:
-            response = try await callGeminiAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
+            response = try await callGeminiAPI(prompt: filteredText, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
         case .openAI:
-            response = try await callOpenAIAPI(prompt: prompt.prompt, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
+            response = try await callOpenAIAPI(prompt: filteredText, apiKey: apiKey, systemPrompt: systemPrompt, model: provider.defaultModel)
         }
         logger.info("API response received, length: \(response.count)")
 
-        let correction = try parseResponse(response, from: prompt)
+        let correction = try parseResponse(response, from: prompt, originalText: filteredText)
         logger.info("Parsed correction: isPerfect=\(correction.isPerfect), errors=\(correction.errors.count)")
         return correction
     }
@@ -92,6 +98,11 @@ actor CorrectionProcessor {
     private func getProvider() -> AIProvider {
         let raw = UserDefaults.standard.string(forKey: "aiProvider") ?? AIProvider.claudeAPI.rawValue
         return AIProvider(rawValue: raw) ?? .claudeAPI
+    }
+
+    @MainActor
+    private func getFilterEnabled() -> Bool {
+        UserDefaults.standard.object(forKey: "filterURLsAndPaths") as? Bool ?? true
     }
 
     @MainActor
@@ -264,7 +275,7 @@ actor CorrectionProcessor {
         """
     }
 
-    private func parseResponse(_ text: String, from prompt: PendingPrompt) throws -> Correction {
+    private func parseResponse(_ text: String, from prompt: PendingPrompt, originalText: String) throws -> Correction {
         guard let jsonString = extractJSON(from: text) else {
             logger.error("Failed to extract JSON from response: \(text.prefix(200))")
             throw APIError.parseError("No JSON found in response")
@@ -297,6 +308,7 @@ actor CorrectionProcessor {
 
         return Correction(
             from: prompt,
+            originalText: originalText,
             corrected: result.corrected,
             errors: errors,
             score: score,

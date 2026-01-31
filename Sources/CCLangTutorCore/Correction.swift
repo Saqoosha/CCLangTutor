@@ -54,11 +54,12 @@ struct Correction: Codable, Identifiable {
     }
 
     /// Create from a pending prompt after correction
-    init(from pending: PendingPrompt, corrected: String, errors: [CorrectionError], score: Int, advice: String?, skipped: Bool = false) {
+    /// - Parameter originalText: Override for the original text (e.g., filtered version). Defaults to pending.prompt.
+    init(from pending: PendingPrompt, originalText: String? = nil, corrected: String, errors: [CorrectionError], score: Int, advice: String?, skipped: Bool = false) {
         self.id = pending.id
         self.timestamp = pending.timestamp
         self.sessionId = pending.sessionId
-        self.original = pending.prompt
+        self.original = originalText ?? pending.prompt
         self.corrected = corrected
         self.errors = errors
         self.isPerfect = errors.isEmpty

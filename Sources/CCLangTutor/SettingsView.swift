@@ -4,6 +4,7 @@ struct SettingsView: View {
     @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.claudeAPI.rawValue
     @AppStorage("systemPrompt") private var systemPrompt = SettingsView.defaultSystemPrompt
     @AppStorage(ResponseLanguage.userDefaultsKey) private var responseLanguage = ResponseLanguage.english.rawValue
+    @AppStorage("filterURLsAndPaths") private var filterURLsAndPaths = true
 
     @State private var claudeAPIKey = ""
     @State private var geminiAPIKey = ""
@@ -90,6 +91,8 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle("Filter URLs and file paths", isOn: $filterURLsAndPaths)
+
                 Button {
                     showingIgnoredRules = true
                 } label: {
@@ -111,9 +114,9 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
             } header: {
-                Text("Correction Filters")
+                Text("Input Filtering")
             } footer: {
-                Text("Manage rules for corrections you don't want to see")
+                Text("Replace URLs and paths with [URL] and [path] markers before correction")
             }
         }
         .formStyle(.grouped)
