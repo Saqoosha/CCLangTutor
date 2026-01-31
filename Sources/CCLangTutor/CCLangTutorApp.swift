@@ -1,4 +1,5 @@
 import AppKit
+import CCHookInstaller
 import SwiftUI
 
 @main
@@ -42,25 +43,36 @@ struct CCLangTutorApp: App {
     }
 
     private func installHook() {
-        guard HookManager.showInstallConfirmation() else { return }
+        let confirmed = HookSetupUI.showInstallPrompt(
+            title: HookManager.messages.installPromptTitle,
+            message: HookManager.messages.installPromptMessage
+        )
+        guard confirmed == .install else { return }
 
         do {
             try HookManager.installHook()
             isHookConfigured = true
-            HookManager.showInstallSuccess()
+            HookSetupUI.showSuccess(
+                title: HookManager.messages.successTitle,
+                message: HookManager.messages.successMessage
+            )
         } catch {
-            HookManager.showError(error)
+            HookSetupUI.showError(error)
         }
     }
 
     private func removeHook() {
-        guard HookManager.showRemoveConfirmation() else { return }
+        let confirmed = HookSetupUI.showRemovePrompt(
+            title: "Remove Claude Code Hooks?",
+            message: "CCLangTutor will no longer check your English grammar automatically."
+        )
+        guard confirmed else { return }
 
         do {
             try HookManager.removeHook()
             isHookConfigured = false
         } catch {
-            HookManager.showError(error)
+            HookSetupUI.showError(error)
         }
     }
 }
