@@ -21,6 +21,7 @@ struct SettingsView: View {
     - Only correct actual mistakes, not stylistic choices
     - Keep explanations brief and practical
     - If the text is understandable and grammatically acceptable for casual writing, mark it as perfect
+    - Leave non-English text (Japanese, Chinese, Korean, etc.) as-is - do not treat foreign words as misspellings
     """
 
     private var aiProvider: AIProvider {
