@@ -57,6 +57,33 @@ pkill -x CCLangTutor; ./scripts/build.sh Release
 - `Sources/CCLangTutorCore/` - Shared models
 - `Sources/notifier/` - CLI hook
 
+### Dependencies
+
+- **CCHookInstaller** - Shared library for Claude Code hook management (GitHub: `Saqoosha/CCHookInstaller`)
+
+#### Local Development with CCHookInstaller
+
+When making changes to CCHookInstaller alongside this project:
+
+```bash
+# 1. Ignore local project.yml changes
+git update-index --assume-unchanged project.yml
+
+# 2. Edit project.yml to use local path:
+# packages:
+#   CCHookInstaller:
+#     path: ../CCHookInstaller
+
+# 3. Develop and build - CCHookInstaller changes reflect immediately
+
+# 4. When done: push CCHookInstaller, create new tag (e.g., v1.1.0)
+
+# 5. Revert project.yml to GitHub URL with new version
+
+# 6. Stop ignoring and commit
+git update-index --no-assume-unchanged project.yml
+```
+
 ### Key Settings
 
 - `aiProvider` - Selected AI provider (claude, gemini, openai)

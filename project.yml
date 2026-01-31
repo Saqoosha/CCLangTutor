@@ -6,6 +6,11 @@ options:
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
 
+packages:
+  CCHookInstaller:
+    url: https://github.com/Saqoosha/CCHookInstaller
+    from: 1.0.0
+
 settings:
   base:
     MARKETING_VERSION: "1.3.0"
@@ -24,6 +29,8 @@ targets:
       - path: Sources/CCLangTutorCore
         excludes:
           - "**/.DS_Store"
+    dependencies:
+      - package: CCHookInstaller
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: sh.saqoo.cclangtutor
       PRODUCT_NAME: "CCLangTutor"
