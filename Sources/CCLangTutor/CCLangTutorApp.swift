@@ -12,7 +12,6 @@ struct CCLangTutorApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(viewModel)
-                .background(WindowAccessor())
         }
         .defaultSize(width: 800, height: 600)
         .commands {
@@ -77,14 +76,3 @@ struct CCLangTutorApp: App {
     }
 }
 
-struct WindowAccessor: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async {
-            view.window?.setFrameAutosaveName("MainWindow")
-        }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {}
-}
