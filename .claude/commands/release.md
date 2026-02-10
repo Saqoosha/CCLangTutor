@@ -35,8 +35,10 @@ Examples:
 ### 3. Run release script with determined version
 
 ```bash
-./scripts/release.sh <new_version>
+MODEL_NAME="<your model name>" ./scripts/release.sh <new_version>
 ```
+
+Set `MODEL_NAME` to your actual model name (e.g., "Opus 4.6", "Sonnet 4.5") for the Co-Authored-By line in the commit message.
 
 This builds, notarizes, creates DMG, commits, tags, and creates GitHub Release.
 
@@ -45,10 +47,6 @@ This builds, notarizes, creates DMG, commits, tags, and creates GitHub Release.
 Analyze the actual code changes and write user-friendly release notes:
 
 ```markdown
-## CCLangTutor X.Y.Z
-
-Brief description of this release.
-
 ### Features (if new features added)
 - New feature description
 
@@ -58,6 +56,10 @@ Brief description of this release.
 ### Bug Fixes (if bugs fixed)
 - Fixed issue description
 ```
+
+**Important:**
+- Do NOT include a top-level title (e.g., `## CCLangTutor X.Y.Z`) — GitHub already shows the release title, so it would be duplicated
+- Do NOT include a Requirements section — it's static and doesn't need to be repeated every release
 
 ### 5. Update GitHub Release
 
