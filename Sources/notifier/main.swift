@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 // Simple file logger for debugging
 func log(_ message: String) {
@@ -83,6 +83,15 @@ func main() {
         textToCorrect = String(parts[1])
     }
 
+    // Only proceed if app is already running
+    let isRunning = NSWorkspace.shared.runningApplications.contains {
+        $0.bundleIdentifier == "sh.saqoo.cclangtutor"
+    }
+    guard isRunning else {
+        log("App is not running, skipping")
+        exit(0)
+    }
+
     // Create pending prompt
     let pendingPrompt = PendingPrompt(
         sessionId: sessionId,
@@ -99,12 +108,6 @@ func main() {
         fputs("Failed to save pending prompt: \(error)\n", stderr)
         exit(1)
     }
-
-    // Launch app in background (no activation)
-    let task = Process()
-    task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    task.arguments = ["-g", "-a", "CCLangTutor"]
-    try? task.run()
 
     // Send distributed notification
     log("Sending notification")
